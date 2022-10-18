@@ -160,9 +160,11 @@ class LSeg(BaseModel):
     def forward(self, x, labelset=''):
         if labelset == '':
             text = self.text
+        elif type(labelset) in [str, list]:
+            text = clip.tokenize(labelset)
         else:
-            text = clip.tokenize(labelset)    
-        
+            text = labelset
+
         if self.channels_last == True:
             x.contiguous(memory_format=torch.channels_last)
 
