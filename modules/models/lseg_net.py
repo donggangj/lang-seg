@@ -304,7 +304,7 @@ class LSeg(BaseModel):
 
         return layers[:j]
 
-    def _resize_pos_embed(self, posemb, gs_h, gs_w):
+    def _resize_pos_embed(self, posemb, gs_h: int, gs_w: int):
         model = self.pretrained.model
         posemb_tok, posemb_grid = (
             posemb[:, : model.start_index],
