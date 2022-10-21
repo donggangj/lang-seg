@@ -161,13 +161,11 @@ class LSeg(BaseModel):
 
         self.text = clip.tokenize(self.labels)
 
-    def forward(self, x, labelset=''):
-        if labelset == '':
+    def forward(self, x, tokens=torch.tensor([])):
+        if tokens.numel() == 0:
             text = self.text
-        elif type(labelset) in [str, list]:
-            text = clip.tokenize(labelset)
         else:
-            text = labelset
+            text = tokens
 
         if self.channels_last == True:
             x.contiguous(memory_format=torch.channels_last)

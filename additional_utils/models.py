@@ -2,6 +2,8 @@
 # Referred to: https://github.com/zhanghang1989/PyTorch-Encoding
 ###########################################################################
 import math
+
+import clip
 import numpy as np
 
 from torch import Tensor
@@ -41,6 +43,8 @@ class LSeg_MultiEvalModule(DataParallel):
         if len(label_set) < 10:
             print('** MultiEvalModule parallel_forward phase: {} **'.format(label_set))
         self.nclass = len(label_set)
+        if type(label_set) in [str, list]:
+            label_set = clip.tokenize(label_set)
         inputs = [(input.unsqueeze(0).cuda(device),)
                   for input, device in zip(inputs, self.device_ids)]
         replicas = self.replicate(self, self.device_ids[:len(inputs)])
@@ -210,6 +214,7 @@ def parallel_apply(modules, inputs, label_set, kwargs_tup=None, devices=None):
     else:
         devices = [None] * len(modules)
     devices = [_get_device_index(x, True) for x in devices]
+    # out = modules[0](*inputs[0], label_set)
     lock = threading.Lock()
     results = {}
     grad_enabled, autocast_enabled = torch.is_grad_enabled(), torch.is_autocast_enabled()
