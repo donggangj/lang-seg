@@ -1,3 +1,4 @@
+from typing import Tuple, Sequence
 import torch
 import torch.nn as nn
 import timm
