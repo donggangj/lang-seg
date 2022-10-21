@@ -463,7 +463,7 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 height = torch.floor(torch.tensor(1.0 * h * long_size / w + 0.5)).to(torch.int32)
                 short_size = height
             # resize image to current size
-            cur_img = InterpolateCompatible.apply(image, torch.tensor([height, width]))
+            cur_img = F.interpolate(image, (int(height), int(width)), mode='bilinear', align_corners=True)
             if long_size <= crop_size:
                 pad_img = pad_image_script(cur_img, self.mean,
                                            self.std, crop_size)
@@ -485,6 +485,6 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 outputs = outputs / count_norm
                 outputs = outputs[:, :, :height, :width]
 
-            score = InterpolateCompatible.apply(outputs, torch.tensor([h, w]))
+            score = F.interpolate(outputs, (int(h), int(w)), mode='bilinear', align_corners=True)
             scores += score
             return scores
