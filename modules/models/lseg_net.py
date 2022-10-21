@@ -124,6 +124,7 @@ class LSeg(BaseModel):
             "clipRN50x16_vitl16_384": [5, 11, 17, 23],
             "clip_vitb32_384": [2, 5, 8, 11],
         }
+        self.vision_hook_ids = hooks[backbone]
 
         # Instantiate backbone and reassemble blocks
         self.clip_pretrained, self.pretrained, self.scratch = _make_encoder(
@@ -132,7 +133,7 @@ class LSeg(BaseModel):
             groups=1,
             expand=False,
             exportable=False,
-            hooks=hooks[backbone],
+            hooks=self.vision_hook_ids,
             use_readout=readout,
         )
 
@@ -208,6 +209,58 @@ class LSeg(BaseModel):
         out = self.scratch.output_conv(out)
 
         return out
+
+    def forward_vit(self, x):
+        pretrained = self.pretrained
+        b, c, h, w = x.shape
+
+        # encoder
+        layer_1, layer_2, layer_3, layer_4 = pretrained.model.forward_flex(x, self.vision_hook_ids)
+
+        layer_1 = pretrained.act_postprocess1[0:2](layer_1)
+        layer_2 = pretrained.act_postprocess2[0:2](layer_2)
+        layer_3 = pretrained.act_postprocess3[0:2](layer_3)
+        layer_4 = pretrained.act_postprocess4[0:2](layer_4)
+
+        unflatten = nn.Sequential(
+            nn.Unflatten(
+                2,
+                torch.Size(
+                    [
+                        h // pretrained.model.patch_size[1],
+                        w // pretrained.model.patch_size[0],
+                    ]
+                ),
+            )
+        )
+
+        if layer_1.ndim == 3:
+            layer_1 = unflatten(layer_1)
+        if layer_2.ndim == 3:
+            layer_2 = unflatten(layer_2)
+        if layer_3.ndim == 3:
+            layer_3 = unflatten(layer_3)
+        if layer_4.ndim == 3:
+            layer_4 = unflatten(layer_4)
+
+        # dim = 2
+        # unflattened_size = [torch.floor_divide(h, pretrained.model.patch_size[1]),
+        #                     torch.floor_divide(w, pretrained.model.patch_size[0])]
+        # if layer_1.ndim == 3:
+        #     layer_1 = layer_1.unflatten(dim, unflattened_size)
+        # if layer_2.ndim == 3:
+        #     layer_2 = layer_2.unflatten(dim, unflattened_size)
+        # if layer_3.ndim == 3:
+        #     layer_3 = layer_3.unflatten(dim, unflattened_size)
+        # if layer_4.ndim == 3:
+        #     layer_4 = layer_4.unflatten(dim, unflattened_size)
+
+        layer_1 = pretrained.act_postprocess1[3: len(pretrained.act_postprocess1)](layer_1)
+        layer_2 = pretrained.act_postprocess2[3: len(pretrained.act_postprocess2)](layer_2)
+        layer_3 = pretrained.act_postprocess3[3: len(pretrained.act_postprocess3)](layer_3)
+        layer_4 = pretrained.act_postprocess4[3: len(pretrained.act_postprocess4)](layer_4)
+
+        return layer_1, layer_2, layer_3, layer_4
 
 
 class LSegNet(LSeg):

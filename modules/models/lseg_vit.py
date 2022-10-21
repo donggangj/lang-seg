@@ -10,7 +10,7 @@ activations = {}
 
 
 def get_activation(name):
-    def hook(model, input, output):
+    def hook(model, input: Tuple[torch.Tensor], output):
         activations[name] = output
 
     return hook
@@ -163,7 +163,8 @@ def _resize_pos_embed(self, posemb, gs_h, gs_w):
     return posemb
 
 
-def forward_flex(self, x):
+def forward_flex(self, x, vision_hook_ids: Sequence[int]):
+    layers = [torch.tensor([]) for _ in range(len(vision_hook_ids))]
     b, c, h, w = x.shape
 
     pos_embed = self._resize_pos_embed(
@@ -193,12 +194,16 @@ def forward_flex(self, x):
     x = x + pos_embed
     x = self.pos_drop(x)
 
-    for blk in self.blocks:
+    j = 0
+    for i, blk in enumerate(self.blocks):
         x = blk(x)
+        if i in vision_hook_ids:
+            layers[j] = x
+            j += 1
 
     x = self.norm(x)
 
-    return x
+    return layers[:j]
 
 
 def get_readout_oper(vit_features, features, use_readout, start_index=1):
@@ -418,12 +423,6 @@ def _make_vit_b16_backbone(
     pretrained = nn.Module()
 
     pretrained.model = model
-    pretrained.model.blocks[hooks[0]].register_forward_hook(get_activation("1"))
-    pretrained.model.blocks[hooks[1]].register_forward_hook(get_activation("2"))
-    pretrained.model.blocks[hooks[2]].register_forward_hook(get_activation("3"))
-    pretrained.model.blocks[hooks[3]].register_forward_hook(get_activation("4"))
-
-    pretrained.activations = activations
 
     if enable_attention_hooks:
         pretrained.model.blocks[hooks[0]].attn.register_forward_hook(
