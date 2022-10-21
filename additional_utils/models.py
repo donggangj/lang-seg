@@ -400,6 +400,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
         self.device_ids = device_ids
         self.scales = list(scales)
         self.flip = flip
+        self.mean = net.mean
+        self.std = net.std
         print('MultiEvalModule: base_size {}, crop_size {}'.format(self.base_size, self.crop_size))
 
     def forward(self, image, tokens=torch.tensor([])):
@@ -436,8 +438,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 w1 = torch.min(w0 + crop_size, pw)
                 crop_img = crop_image(pad_img, h0, h1, w0, w1)
                 # pad if needed
-                pad_crop_img = pad_image_script(crop_img, self.net.mean,
-                                                self.net.std, crop_size)
+                pad_crop_img = pad_image_script(crop_img, self.mean,
+                                                self.std, crop_size)
                 output = self.net_forward(pad_crop_img, label_set)
                 outputs[:, :, h0:h1, w0:w1] += crop_image(output,
                                                           0, h1 - h0, 0, w1 - w0)
@@ -463,15 +465,15 @@ class LSegMultiEvalAlter(torch.nn.Module):
             # resize image to current size
             cur_img = InterpolateCompatible.apply(image, torch.tensor([height, width]))
             if long_size <= crop_size:
-                pad_img = pad_image_script(cur_img, self.net.mean,
-                                           self.net.std, crop_size)
+                pad_img = pad_image_script(cur_img, self.mean,
+                                           self.std, crop_size)
                 outputs = self.net_forward(pad_img, label_set)
                 outputs = crop_image(outputs, 0, height, 0, width)
             else:
                 if short_size < crop_size:
                     # pad if needed
-                    pad_img = pad_image_script(cur_img, self.net.mean,
-                                               self.net.std, crop_size)
+                    pad_img = pad_image_script(cur_img, self.mean,
+                                               self.std, crop_size)
                 else:
                     pad_img = cur_img
                 shape = get_shape(pad_img)
