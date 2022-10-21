@@ -334,20 +334,14 @@ class FeatureFusionBlock_custom(nn.Module):
 
         self.skip_add = nn.quantized.FloatFunctional()
 
-    def forward(self, *xs):
+    def forward(self, x):
         """Forward pass.
 
         Returns:
             tensor: output
         """
-        output = xs[0]
 
-        if len(xs) == 2:
-            res = self.resConfUnit1(xs[1])
-            output = self.skip_add.add(output, res)
-            # output += res
-
-        output = self.resConfUnit2(output)
+        output = self.resConfUnit2(x)
 
         output = nn.functional.interpolate(
             output, scale_factor=2, mode="bilinear", align_corners=self.align_corners
@@ -357,3 +351,8 @@ class FeatureFusionBlock_custom(nn.Module):
 
         return output
 
+    def forward_with_skip(self, x, skip):
+        res = self.resConfUnit1(skip)
+        output = self.skip_add.add(x, res)
+
+        return self.forward(output)

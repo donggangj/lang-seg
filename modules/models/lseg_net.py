@@ -180,9 +180,9 @@ class LSeg(BaseModel):
         layer_4_rn = self.scratch.layer4_rn(layer_4)
 
         path_4 = self.scratch.refinenet4(layer_4_rn)
-        path_3 = self.scratch.refinenet3(path_4, layer_3_rn)
-        path_2 = self.scratch.refinenet2(path_3, layer_2_rn)
-        path_1 = self.scratch.refinenet1(path_2, layer_1_rn)
+        path_3 = self.scratch.refinenet3.forward_with_skip(path_4, layer_3_rn)
+        path_2 = self.scratch.refinenet2.forward_with_skip(path_3, layer_2_rn)
+        path_1 = self.scratch.refinenet1.forward_with_skip(path_2, layer_1_rn)
 
         text = text.to(x.device)
         self.logit_scale = self.logit_scale.to(x.device)
