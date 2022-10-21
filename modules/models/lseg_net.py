@@ -166,10 +166,10 @@ class LSeg(BaseModel):
                               self.pretrained.act_postprocess2[:2],
                               self.pretrained.act_postprocess3[:2],
                               self.pretrained.act_postprocess4[:2],
-                              self.pretrained.act_postprocess1[2:],
-                              self.pretrained.act_postprocess2[2:],
-                              self.pretrained.act_postprocess3[2:],
-                              self.pretrained.act_postprocess4[2:])
+                              self.pretrained.act_postprocess1[3:],
+                              self.pretrained.act_postprocess2[3:],
+                              self.pretrained.act_postprocess3[3:],
+                              self.pretrained.act_postprocess4[3:])
         for i in range(len(act_postprocessing)):
             setattr(self, f'act_postprocessing{i + 1}', act_postprocessing[i])
 
