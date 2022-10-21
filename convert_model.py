@@ -304,6 +304,7 @@ def main():
 
     model.mean = [0.5, 0.5, 0.5]
     model.std = [0.5, 0.5, 0.5]
+    model.net.init_act_postprocessing()
 
     evaluator = LSeg_MultiEvalModule(
         model, scales=scales, flip=True

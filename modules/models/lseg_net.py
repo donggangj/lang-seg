@@ -161,6 +161,18 @@ class LSeg(BaseModel):
 
         self.text = clip.tokenize(self.labels)
 
+    def init_act_postprocessing(self):
+        act_postprocessing = (self.pretrained.act_postprocess1[:2],
+                              self.pretrained.act_postprocess2[:2],
+                              self.pretrained.act_postprocess3[:2],
+                              self.pretrained.act_postprocess4[:2],
+                              self.pretrained.act_postprocess1[2:],
+                              self.pretrained.act_postprocess2[2:],
+                              self.pretrained.act_postprocess3[2:],
+                              self.pretrained.act_postprocess4[2:])
+        for i in range(len(act_postprocessing)):
+            setattr(self, f'act_postprocessing{i + 1}', act_postprocessing[i])
+
     def forward(self, x, tokens=torch.tensor([])):
         if tokens.numel() == 0:
             text = self.text
@@ -215,10 +227,10 @@ class LSeg(BaseModel):
         # encoder
         layer_1, layer_2, layer_3, layer_4 = self.forward_flex(x)
 
-        layer_1 = pretrained.act_postprocess1[0:2](layer_1)
-        layer_2 = pretrained.act_postprocess2[0:2](layer_2)
-        layer_3 = pretrained.act_postprocess3[0:2](layer_3)
-        layer_4 = pretrained.act_postprocess4[0:2](layer_4)
+        layer_1 = self.act_postprocessing1(layer_1)
+        layer_2 = self.act_postprocessing2(layer_2)
+        layer_3 = self.act_postprocessing3(layer_3)
+        layer_4 = self.act_postprocessing4(layer_4)
 
         unflatten = nn.Sequential(
             nn.Unflatten(
@@ -253,10 +265,10 @@ class LSeg(BaseModel):
         # if layer_4.ndim == 3:
         #     layer_4 = layer_4.unflatten(dim, unflattened_size)
 
-        layer_1 = pretrained.act_postprocess1[3: len(pretrained.act_postprocess1)](layer_1)
-        layer_2 = pretrained.act_postprocess2[3: len(pretrained.act_postprocess2)](layer_2)
-        layer_3 = pretrained.act_postprocess3[3: len(pretrained.act_postprocess3)](layer_3)
-        layer_4 = pretrained.act_postprocess4[3: len(pretrained.act_postprocess4)](layer_4)
+        layer_1 = self.act_postprocessing5(layer_1)
+        layer_2 = self.act_postprocessing6(layer_2)
+        layer_3 = self.act_postprocessing7(layer_3)
+        layer_4 = self.act_postprocessing8(layer_4)
 
         return layer_1, layer_2, layer_3, layer_4
 
