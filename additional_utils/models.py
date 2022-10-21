@@ -273,7 +273,7 @@ def pad_image_script(img, mean, std, crop_size):
     padh = crop_size - h if h < crop_size else torch.tensor(0)
     padw = crop_size - w if w < crop_size else torch.tensor(0)
     pad_values = -mean / std
-    img_pad = torch.zeros(b, c, h + padh, w + padw)
+    img_pad = torch.zeros(b, c, h + padh, w + padw).to(img.device)
     for i in range(int(c)):
         # note that pytorch pad params is in reversed orders
         img_pad[:, i, :, :] = F.pad(img[:, i, :, :], (0, int(padw), 0, int(padh)), value=pad_values[i])
