@@ -272,7 +272,7 @@ def pad_image_script(img, mean, std, crop_size):
     b, c, h, w = shape[0], shape[1], shape[2], shape[3]
     padh = crop_size - h if h < crop_size else torch.tensor(0)
     padw = crop_size - w if w < crop_size else torch.tensor(0)
-    pad_values = torch.tensor(-mean / std)
+    pad_values = -mean / std
     img_pad = torch.zeros(b, c, h + padh, w + padw)
     for i in range(int(c)):
         # note that pytorch pad params is in reversed orders
@@ -400,8 +400,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
         self.device_ids = device_ids
         self.scales = list(scales)
         self.flip = flip
-        self.mean = net.mean
-        self.std = net.std
+        self.mean = torch.tensor(net.mean)
+        self.std = torch.tensor(net.std)
         print('MultiEvalModule: base_size {}, crop_size {}'.format(self.base_size, self.crop_size))
 
     def forward(self, image, tokens=torch.tensor([])):
