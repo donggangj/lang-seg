@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .lseg_vit import (
     _make_pretrained_clip_vitl16_384,
@@ -344,8 +345,8 @@ class FeatureFusionBlock_custom(nn.Module):
 
         output = self.resConfUnit2(x)
 
-        output = nn.functional.interpolate(
-            output, scale_factor=2, mode="bilinear", align_corners=self.align_corners
+        output = F.interpolate(
+            output, scale_factor=2., mode="bilinear", align_corners=self.align_corners
         )
 
         output = self.out_conv(output)
