@@ -211,10 +211,11 @@ class LSeg(BaseModel):
 
         out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0, 3, 1, 2)
 
-        if self.arch_option in [1, 2]:
-            for _ in range(self.block_depth - 1):
-                out = self.scratch.head_block(out)
-            out = self.scratch.head_block(out, False)
+        assert self.arch_option not in [1, 2]
+        # if self.arch_option in [1, 2]:
+        #     for _ in range(self.block_depth - 1):
+        #         out = self.scratch.head_block(out)
+        #     out = self.scratch.head_block(out, False)
 
         out = self.scratch.output_conv(out)
 
