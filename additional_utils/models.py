@@ -5,6 +5,7 @@ import math
 
 import clip
 import numpy as np
+from typing import Any, Union
 
 from torch import Tensor
 import torch.nn.functional as F
@@ -18,7 +19,9 @@ from torch._utils import ExceptionWrapper
 
 up_kwargs = {'mode': 'bilinear', 'align_corners': True}
 
-__all__ = ['LSeg_MultiEvalModule']
+__all__ = ['LSeg_MultiEvalModule',
+           'LSegMultiEvalAlter',
+           ]
 
 
 class LSeg_MultiEvalModule(DataParallel):
@@ -258,3 +261,228 @@ def parallel_apply(modules, inputs, label_set, kwargs_tup=None, devices=None):
     return outputs
 
 
+@torch.jit.script
+def get_shape(x: Tensor):
+    return torch.tensor(x.shape)
+
+
+@torch.jit.script
+def pad_image_script(img, mean, std, crop_size):
+    shape = get_shape(img)
+    b, c, h, w = shape[0], shape[1], shape[2], shape[3]
+    padh = crop_size - h if h < crop_size else torch.tensor(0)
+    padw = crop_size - w if w < crop_size else torch.tensor(0)
+    pad_values = torch.tensor(-mean / std)
+    img_pad = torch.zeros(b, c, h + padh, w + padw)
+    for i in range(int(c)):
+        # note that pytorch pad params is in reversed orders
+        img_pad[:, i, :, :] = F.pad(img[:, i, :, :], (0, int(padw), 0, int(padh)), value=pad_values[i])
+    return img_pad
+#
+#
+# def module_inference_script(module, image: Tensor, label_set, flip=True):
+#     output = module.evaluate_random(image, label_set)
+#     if flip:
+#         fimg = flip_image(image)
+#         foutput = module.evaluate_random(fimg, label_set)
+#         output += flip_image(foutput)
+#     return output
+#
+#
+# @torch.jit.script
+# def grid_eval(net, pad_img: Tensor, label_set: Tensor, h_grids: Tensor, w_grids: Tensor,
+#               n_class: Tensor, crop_size: Tensor, stride: Tensor,
+#               mean: Tensor, std: Tensor, flip: bool):
+#     pad_shape = get_shape(pad_img)
+#     batch, ph, pw = pad_shape[0], pad_shape[2], pad_shape[3]  # .size()
+#     outputs = torch.zeros(batch, n_class, ph, pw).cuda()
+#     count_norm = torch.zeros(batch, 1, ph, pw).cuda()
+#     # grid evaluation
+#     for idh in range(int(h_grids)):
+#         for idw in range(int(w_grids)):
+#             h0 = torch.tensor(idh * stride, dtype=torch.int32)
+#             w0 = torch.tensor(idw * stride, dtype=torch.int32)
+#             h1 = torch.min(h0 + crop_size, ph)
+#             w1 = torch.min(w0 + crop_size, pw)
+#             crop_img = crop_image(pad_img, h0, h1, w0, w1)
+#             # pad if needed
+#             pad_crop_img = pad_image_script(crop_img, mean,
+#                                             std, crop_size)
+#             output = module_inference_script(net, pad_crop_img, label_set, flip)
+#             outputs[:, :, h0:h1, w0:w1] += crop_image(output,
+#                                                       0, h1 - h0, 0, w1 - w0)
+#             count_norm[:, :, h0:h1, w0:w1] += 1
+#     return outputs, count_norm
+#
+#
+# @torch.jit.script
+# def loop_scale(net, image: Tensor, label_set: Tensor,
+#                scales: Tensor, n_class: Tensor, base_size: Tensor, crop_size: Tensor, stride: Tensor,
+#                mean: Tensor, std: Tensor, flip: bool):
+#     shape = get_shape(image)
+#     batch, h, w = shape[0], shape[2], shape[3]
+#     scores = torch.zeros(batch, n_class, h, w).cuda()
+#     for scale in scales:
+#         long_size = torch.ceil(torch.tensor(base_size * scale)).to(torch.int32)
+#         if h > w:
+#             height = long_size
+#             width = torch.floor(torch.tensor(1.0 * w * long_size / h + 0.5)).to(torch.int32)
+#             short_size = width
+#         else:
+#             width = long_size
+#             height = torch.floor(torch.tensor(1.0 * h * long_size / w + 0.5)).to(torch.int32)
+#             short_size = height
+#         # resize image to current size
+#         cur_img = InterpolateCompatible.apply(image, torch.tensor([height, width]))
+#         if long_size <= crop_size:
+#             pad_img = pad_image_script(cur_img, mean,
+#                                        std, crop_size)
+#             outputs = module_inference_script(net, pad_img, label_set, flip)
+#             outputs = crop_image(outputs, 0, height, 0, width)
+#         else:
+#             if short_size < crop_size:
+#                 # pad if needed
+#                 pad_img = pad_image_script(cur_img, mean,
+#                                            std, crop_size)
+#             else:
+#                 pad_img = cur_img
+#             shape = get_shape(pad_img)
+#             ph, pw = shape[2], shape[3]  # .size()
+#             # grid forward and normalize
+#             h_grids = torch.tensor(torch.ceil(1.0 * (ph - crop_size) / stride) + 1, dtype=torch.int32)
+#             w_grids = torch.tensor(torch.ceil(1.0 * (pw - crop_size) / stride) + 1, dtype=torch.int32)
+#             outputs, count_norm = grid_eval(net, pad_img, label_set,
+#                                             h_grids, w_grids, n_class, crop_size, stride, mean, std, flip)
+#             outputs = outputs / count_norm
+#             outputs = outputs[:, :, :height, :width]
+#
+#         score = InterpolateCompatible.apply(outputs, torch.tensor([h, w]))
+#         scores += score
+#         return scores
+
+
+class InterpolateCompatible(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx: Any, *args: Any, **kwargs: Any) -> Any:
+        if len(args) >= 4:
+            t, scales, mode, align_corners = args[:4]
+            return F.interpolate(t,
+                                 scales[-2:].tolist(),
+                                 mode=mode,
+                                 align_corners=align_corners)
+        else:
+            t, scales = args[:2]
+            return F.interpolate(t,
+                                 scales[-2:].tolist(),
+                                 mode='bilinear',
+                                 align_corners=True)
+
+    @staticmethod
+    def symbolic(g, t, scales, mode='linear', align_corners=True):
+        return g.op('Resize',
+                    t,
+                    g.op('Constant', value_t=torch.tensor([], dtype=torch.float32)),
+                    scales,
+                    coordinate_transformation_mode_s='align_corners' if align_corners else 'pytorch_half_pixel',
+                    mode_s=mode)
+
+
+class LSegMultiEvalAlter(torch.nn.Module):
+    def __init__(self, net, device_ids=None, flip=True,
+                 scales=(0.5, 0.75, 1.0, 1.25, 1.5, 1.75),
+                 n_class=1,
+                 sample_input=()):
+        super().__init__()
+        self.base_size = net.base_size
+        self.crop_size = net.crop_size
+        self.nclass = n_class
+        self.net = torch.jit.script(net.net)
+        self.device_ids = device_ids
+        self.scales = list(scales)
+        self.flip = flip
+        print('MultiEvalModule: base_size {}, crop_size {}'.format(self.base_size, self.crop_size))
+
+    def forward(self, image, tokens=torch.tensor([])):
+        """Multi-size Evaluation"""
+        # only single image is supported for evaluation
+        n_class = get_shape(tokens)[0]
+        if n_class > 0:
+            self.nclass = n_class
+        stride_rate = 2.0 / 3.0
+        stride = torch.tensor(self.crop_size * stride_rate, dtype=torch.int32)
+
+        return self.loop_scale(image, tokens, stride)
+
+    def net_forward(self, image: Tensor, label_set):
+        output = self.net(image, label_set)
+        if self.flip:
+            fimg = flip_image(image)
+            foutput = self.net(fimg, label_set)
+            output += flip_image(foutput)
+        return output
+
+    def grid_eval(self, pad_img: Tensor, label_set: Tensor, h_grids: Tensor, w_grids: Tensor,
+                  crop_size: Tensor, stride: Tensor):
+        pad_shape = get_shape(pad_img)
+        batch, ph, pw = pad_shape[0], pad_shape[2], pad_shape[3]  # .size()
+        outputs = torch.zeros(batch, self.nclass, ph, pw).cuda()
+        count_norm = torch.zeros(batch, 1, ph, pw).cuda()
+        # grid evaluation
+        for idh in range(int(h_grids)):
+            for idw in range(int(w_grids)):
+                h0 = torch.tensor(idh * stride, dtype=torch.int32)
+                w0 = torch.tensor(idw * stride, dtype=torch.int32)
+                h1 = torch.min(h0 + crop_size, ph)
+                w1 = torch.min(w0 + crop_size, pw)
+                crop_img = crop_image(pad_img, h0, h1, w0, w1)
+                # pad if needed
+                pad_crop_img = pad_image_script(crop_img, self.net.mean,
+                                                self.net.std, crop_size)
+                output = self.net_forward(pad_crop_img, label_set)
+                outputs[:, :, h0:h1, w0:w1] += crop_image(output,
+                                                          0, h1 - h0, 0, w1 - w0)
+                count_norm[:, :, h0:h1, w0:w1] += 1
+        return outputs, count_norm
+
+    def loop_scale(self, image: Tensor, label_set: Tensor, stride: Tensor):
+        base_size = torch.tensor(self.base_size)
+        crop_size = torch.tensor(self.crop_size)
+        shape = get_shape(image)
+        batch, h, w = shape[0], shape[2], shape[3]
+        scores = torch.zeros(batch, self.nclass, h, w).cuda()
+        for scale in torch.tensor(self.scales):
+            long_size = torch.ceil(torch.tensor(base_size * scale)).to(torch.int32)
+            if h > w:
+                height = long_size
+                width = torch.floor(torch.tensor(1.0 * w * long_size / h + 0.5)).to(torch.int32)
+                short_size = width
+            else:
+                width = long_size
+                height = torch.floor(torch.tensor(1.0 * h * long_size / w + 0.5)).to(torch.int32)
+                short_size = height
+            # resize image to current size
+            cur_img = InterpolateCompatible.apply(image, torch.tensor([height, width]))
+            if long_size <= crop_size:
+                pad_img = pad_image_script(cur_img, self.net.mean,
+                                           self.net.std, crop_size)
+                outputs = self.net_forward(pad_img, label_set)
+                outputs = crop_image(outputs, 0, height, 0, width)
+            else:
+                if short_size < crop_size:
+                    # pad if needed
+                    pad_img = pad_image_script(cur_img, self.net.mean,
+                                               self.net.std, crop_size)
+                else:
+                    pad_img = cur_img
+                shape = get_shape(pad_img)
+                ph, pw = shape[2], shape[3]  # .size()
+                # grid forward and normalize
+                h_grids = torch.tensor(torch.ceil(1.0 * (ph - crop_size) / stride) + 1, dtype=torch.int32)
+                w_grids = torch.tensor(torch.ceil(1.0 * (pw - crop_size) / stride) + 1, dtype=torch.int32)
+                outputs, count_norm = self.grid_eval(pad_img, label_set, h_grids, w_grids, crop_size, stride)
+                outputs = outputs / count_norm
+                outputs = outputs[:, :, :height, :width]
+
+            score = InterpolateCompatible.apply(outputs, torch.tensor([h, w]))
+            scores += score
+            return scores
