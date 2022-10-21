@@ -123,8 +123,7 @@ class Interpolate(nn.Module):
         """
         super(Interpolate, self).__init__()
 
-        self.interp = nn.functional.interpolate
-        self.scale_factor = scale_factor
+        self.scale_factor = float(scale_factor)
         self.mode = mode
         self.align_corners = align_corners
 
@@ -138,7 +137,7 @@ class Interpolate(nn.Module):
             tensor: interpolated data
         """
 
-        x = self.interp(
+        x = F.interpolate(
             x,
             scale_factor=self.scale_factor,
             mode=self.mode,
