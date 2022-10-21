@@ -355,12 +355,16 @@ def main():
     img = Image.fromarray(np.uint8(255 * img)).convert("RGBA")
     seg = mask.convert("RGBA")
     out = Image.blend(img, seg, alpha)
-    plt.axis('off')
-    plt.imshow(img)
-    plt.figure()
-    plt.legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
-    plt.axis('off')
-    plt.imshow(seg)
+    fig = plt.figure(figsize=(19.2, 3.6))
+    axes = fig.subplots(1, 3)
+    axes[0].imshow(img)
+    axes[0].axis('off')
+    axes[1].imshow(out)
+    axes[1].axis('off')
+    axes[2].imshow(seg)
+    axes[2].axis('off')
+    axes[2].legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
+    fig.savefig('./tmp.jpg')
 
     onnx_path: str = args.onnx_path
     if not exists(onnx_path):
