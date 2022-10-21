@@ -339,7 +339,7 @@ def main():
 
     with torch.no_grad():
         # evaluator.forward(image, labels) #parallel_forward
-        outputs = evaluator(image.cuda(), clip.tokenize(labels).cuda())
+        outputs = [evaluator(image.cuda(), clip.tokenize(labels).cuda())]
         predicts = [
             torch.max(output, 1)[1].cpu().numpy()
             for output in outputs
