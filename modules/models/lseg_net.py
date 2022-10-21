@@ -232,38 +232,17 @@ class LSeg(BaseModel):
         layer_3 = self.act_postprocessing3(layer_3)
         layer_4 = self.act_postprocessing4(layer_4)
 
-        unflatten = nn.Sequential(
-            nn.Unflatten(
-                2,
-                torch.Size(
-                    [
-                        h // pretrained.model.patch_size[1],
-                        w // pretrained.model.patch_size[0],
-                    ]
-                ),
-            )
-        )
-
+        dim = 2
+        unflattened_size = [h // pretrained.model.patch_size[1],
+                            w // pretrained.model.patch_size[0]]
         if layer_1.ndim == 3:
-            layer_1 = unflatten(layer_1)
+            layer_1 = layer_1.unflatten(dim, unflattened_size)
         if layer_2.ndim == 3:
-            layer_2 = unflatten(layer_2)
+            layer_2 = layer_2.unflatten(dim, unflattened_size)
         if layer_3.ndim == 3:
-            layer_3 = unflatten(layer_3)
+            layer_3 = layer_3.unflatten(dim, unflattened_size)
         if layer_4.ndim == 3:
-            layer_4 = unflatten(layer_4)
-
-        # dim = 2
-        # unflattened_size = [torch.floor_divide(h, pretrained.model.patch_size[1]),
-        #                     torch.floor_divide(w, pretrained.model.patch_size[0])]
-        # if layer_1.ndim == 3:
-        #     layer_1 = layer_1.unflatten(dim, unflattened_size)
-        # if layer_2.ndim == 3:
-        #     layer_2 = layer_2.unflatten(dim, unflattened_size)
-        # if layer_3.ndim == 3:
-        #     layer_3 = layer_3.unflatten(dim, unflattened_size)
-        # if layer_4.ndim == 3:
-        #     layer_4 = layer_4.unflatten(dim, unflattened_size)
+            layer_4 = layer_4.unflatten(dim, unflattened_size)
 
         layer_1 = self.act_postprocessing5(layer_1)
         layer_2 = self.act_postprocessing6(layer_2)
