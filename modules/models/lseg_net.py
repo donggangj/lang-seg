@@ -266,7 +266,7 @@ class LSeg(BaseModel):
         layers = [torch.tensor([]) for _ in range(len(vision_hook_ids))]
         b, c, h, w = x.shape
 
-        pos_embed = model._resize_pos_embed(
+        pos_embed = self._resize_pos_embed(
             model.pos_embed, h // model.patch_size[1], w // model.patch_size[0]
         )
 
@@ -303,6 +303,23 @@ class LSeg(BaseModel):
         x = model.norm(x)
 
         return layers[:j]
+
+    def _resize_pos_embed(self, posemb, gs_h, gs_w):
+        model = self.pretrained.model
+        posemb_tok, posemb_grid = (
+            posemb[:, : model.start_index],
+            posemb[0, model.start_index:],
+        )
+
+        gs_old = int(math.sqrt(len(posemb_grid)))
+
+        posemb_grid = posemb_grid.reshape(1, gs_old, gs_old, -1).permute(0, 3, 1, 2)
+        posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w), mode="bilinear")
+        posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_h * gs_w, -1)
+
+        posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
+
+        return posemb
 
 
 class LSegNet(LSeg):
