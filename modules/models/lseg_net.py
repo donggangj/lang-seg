@@ -255,7 +255,7 @@ class LSeg(BaseModel):
     def forward_flex(self, x):
         vision_hook_ids = self.vision_hook_ids
         model = self.pretrained.model
-        layers = [torch.tensor([]) for _ in range(len(vision_hook_ids))]
+        layers = []
         b, c, h, w = x.shape
 
         pos_embed = self._resize_pos_embed(
@@ -285,16 +285,14 @@ class LSeg(BaseModel):
         x = x + pos_embed
         x = model.pos_drop(x)
 
-        j = 0
         for i, blk in enumerate(model.blocks):
             x = blk(x)
             if i in vision_hook_ids:
-                layers[j] = x
-                j += 1
+                layers.append(x)
 
         x = model.norm(x)
 
-        return layers[:j]
+        return layers
 
     def _resize_pos_embed(self, posemb, gs_h: int, gs_w: int):
         model = self.pretrained.model
