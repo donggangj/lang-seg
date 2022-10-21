@@ -337,27 +337,6 @@ def main():
         label = line
         labels.append(label)
 
-    onnx_path: str = args.onnx_path
-    if not exists(onnx_path):
-        model_onnx = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
-                                        sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
-        model_onnx.eval()
-        with torch.no_grad():
-            out0 = evaluator.parallel_forward(image, labels)
-            out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
-            ex_to_onnx(torch.jit.script(model_onnx),
-                       (image.cuda(), clip.tokenize(labels).cuda()),
-                       onnx_path,
-                       export_params=True,
-                       opset_version=12,
-                       do_constant_folding=True,
-                       input_names=['image',
-                                    'label_tokens'],
-                       output_names=['label_map'],
-                       dynamic_axes={'image': {2: 'image_h', 3: 'image_w'},
-                                     'label_tokens': {0: 'n_tokens'},
-                                     'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}})
-
     with torch.no_grad():
         # evaluator.forward(image, labels) #parallel_forward
         outputs = evaluator(image.cuda(), clip.tokenize(labels).cuda())
@@ -382,6 +361,26 @@ def main():
     plt.legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
     plt.axis('off')
     plt.imshow(seg)
+
+    onnx_path: str = args.onnx_path
+    if not exists(onnx_path):
+        model_onnx = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
+                                        sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
+        model_onnx.eval()
+        with torch.no_grad():
+            out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
+            ex_to_onnx(torch.jit.script(model_onnx),
+                       (image.cuda(), clip.tokenize(labels).cuda()),
+                       onnx_path,
+                       export_params=True,
+                       opset_version=12,
+                       do_constant_folding=True,
+                       input_names=['image',
+                                    'label_tokens'],
+                       output_names=['label_map'],
+                       dynamic_axes={'image': {2: 'image_h', 3: 'image_w'},
+                                     'label_tokens': {0: 'n_tokens'},
+                                     'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}})
 
 
 if __name__ == '__main__':
