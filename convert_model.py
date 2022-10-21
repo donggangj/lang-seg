@@ -359,7 +359,8 @@ def main():
                                      'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}})
 
     with torch.no_grad():
-        outputs = evaluator.parallel_forward(image, labels)  # evaluator.forward(image, labels) #parallel_forward
+        # evaluator.forward(image, labels) #parallel_forward
+        outputs = evaluator(image.cuda(), clip.tokenize(labels).cuda())
         predicts = [
             torch.max(output, 1)[1].cpu().numpy()
             for output in outputs
