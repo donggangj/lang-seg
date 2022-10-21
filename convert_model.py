@@ -339,7 +339,7 @@ def main():
 
     onnx_path: str = args.onnx_path
     if not exists(onnx_path):
-        model_onnx = LSegMultiEvalAlter(model, scales=scales, flip=True,
+        model_onnx = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
                                         sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
         model_onnx.eval()
         with torch.no_grad():
