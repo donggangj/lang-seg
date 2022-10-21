@@ -213,7 +213,7 @@ class LSeg(BaseModel):
         b, c, h, w = x.shape
 
         # encoder
-        layer_1, layer_2, layer_3, layer_4 = pretrained.model.forward_flex(x, self.vision_hook_ids)
+        layer_1, layer_2, layer_3, layer_4 = self.forward_flex(x)
 
         layer_1 = pretrained.act_postprocess1[0:2](layer_1)
         layer_2 = pretrained.act_postprocess2[0:2](layer_2)
@@ -259,6 +259,50 @@ class LSeg(BaseModel):
         layer_4 = pretrained.act_postprocess4[3: len(pretrained.act_postprocess4)](layer_4)
 
         return layer_1, layer_2, layer_3, layer_4
+
+    def forward_flex(self, x):
+        vision_hook_ids = self.vision_hook_ids
+        model = self.pretrained.model
+        layers = [torch.tensor([]) for _ in range(len(vision_hook_ids))]
+        b, c, h, w = x.shape
+
+        pos_embed = model._resize_pos_embed(
+            model.pos_embed, h // model.patch_size[1], w // model.patch_size[0]
+        )
+
+        B = x.shape[0]
+
+        if hasattr(model.patch_embed, "backbone"):
+            x = model.patch_embed.backbone(x)
+            if isinstance(x, (list, tuple)):
+                x = x[-1]  # last feature if backbone outputs list/tuple of features
+        x = model.patch_embed.proj(x).flatten(2).transpose(1, 2)
+
+        if getattr(model, "dist_token", None) is not None:
+            cls_tokens = model.cls_token.expand(
+                B, -1, -1
+            )  # stole cls_tokens impl from Phil Wang, thanks
+            dist_token = model.dist_token.expand(B, -1, -1)
+            x = torch.cat((cls_tokens, dist_token, x), dim=1)
+        else:
+            cls_tokens = model.cls_token.expand(
+                B, -1, -1
+            )  # stole cls_tokens impl from Phil Wang, thanks
+            x = torch.cat((cls_tokens, x), dim=1)
+
+        x = x + pos_embed
+        x = model.pos_drop(x)
+
+        j = 0
+        for i, blk in enumerate(model.blocks):
+            x = blk(x)
+            if i in vision_hook_ids:
+                layers[j] = x
+                j += 1
+
+        x = model.norm(x)
+
+        return layers[:j]
 
 
 class LSegNet(LSeg):
