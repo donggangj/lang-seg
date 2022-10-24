@@ -166,7 +166,7 @@ def pad_image(img, mean, std, crop_size):
     return img_pad
 
 
-def crop_image(img, h0, h1, w0, w1):
+def crop_image(img, h0: int, h1: int, w0: int, w1: int):
     return img[:, :, h0:h1, w0:w1]
 
 
