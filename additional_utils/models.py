@@ -140,10 +140,10 @@ class LSeg_MultiEvalModule(DataParallel):
 
 
 def module_inference(module, image, label_set, flip=True):
-    output = module.evaluate_random(image, label_set)
+    output = module.net(image, label_set)
     if flip:
         fimg = flip_image(image)
-        foutput = module.evaluate_random(fimg, label_set)
+        foutput = module.net(fimg, label_set)
         output += flip_image(foutput)
     return output
 
