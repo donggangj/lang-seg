@@ -479,12 +479,12 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 shape = get_shape(pad_img)
                 ph, pw = shape[2], shape[3]  # .size()
                 # grid forward and normalize
-                h_grids = torch.tensor(torch.ceil(1.0 * (ph - crop_size) / stride) + 1, dtype=torch.int32)
-                w_grids = torch.tensor(torch.ceil(1.0 * (pw - crop_size) / stride) + 1, dtype=torch.int32)
+                h_grids = torch.tensor(torch.ceil(1.0 * (ph - crop_size) / stride), dtype=torch.int32) + 1
+                w_grids = torch.tensor(torch.ceil(1.0 * (pw - crop_size) / stride), dtype=torch.int32) + 1
                 outputs, count_norm = self.grid_eval(pad_img, label_set, h_grids, w_grids, crop_size, stride)
                 outputs = outputs / count_norm
                 outputs = outputs[:, :, :height, :width]
 
             score = F.interpolate(outputs, (int(h), int(w)), mode='bilinear', align_corners=True)
             scores += score
-            return scores
+        return scores
