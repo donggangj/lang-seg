@@ -241,6 +241,27 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
     return out_img, patches
 
 
+def show_result(image, predict, labels, alpha, save_path):
+    # show results
+    new_palette = get_new_pallete(len(labels))
+    mask, patches = get_new_mask_pallete(predict, new_palette, out_label_flag=True, labels=labels)
+    img = image[0].permute(1, 2, 0)
+    img = img * 0.5 + 0.5
+    img = Image.fromarray(np.uint8(255 * img)).convert("RGBA")
+    seg = mask.convert("RGBA")
+    out = Image.blend(img, seg, alpha)
+    fig = plt.figure(figsize=(19.2, 3.6))
+    axes = fig.subplots(1, 3)
+    axes[0].imshow(img)
+    axes[0].axis('off')
+    axes[1].imshow(out)
+    axes[1].axis('off')
+    axes[2].imshow(seg)
+    axes[2].axis('off')
+    axes[2].legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
+    fig.savefig(save_path)
+
+
 def main():
     args = Options().parse()
 
@@ -347,24 +368,7 @@ def main():
 
     predict = predicts[0]
 
-    # show results
-    new_palette = get_new_pallete(len(labels))
-    mask, patches = get_new_mask_pallete(predict, new_palette, out_label_flag=True, labels=labels)
-    img = image[0].permute(1, 2, 0)
-    img = img * 0.5 + 0.5
-    img = Image.fromarray(np.uint8(255 * img)).convert("RGBA")
-    seg = mask.convert("RGBA")
-    out = Image.blend(img, seg, alpha)
-    fig = plt.figure(figsize=(19.2, 3.6))
-    axes = fig.subplots(1, 3)
-    axes[0].imshow(img)
-    axes[0].axis('off')
-    axes[1].imshow(out)
-    axes[1].axis('off')
-    axes[2].imshow(seg)
-    axes[2].axis('off')
-    axes[2].legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
-    fig.savefig('./tmp.jpg')
+    show_result(image, predict, labels, alpha, './tmp.jpg')
 
     onnx_path: str = args.onnx_path
     if not exists(onnx_path):
@@ -372,7 +376,8 @@ def main():
                                         sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
         model_onnx.eval()
         with torch.no_grad():
-            out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
+            onnx_out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
+            show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_onnx.jpg')
             ex_to_onnx(torch.jit.script(model_onnx),
                        (image.cuda(), clip.tokenize(labels).cuda()),
                        onnx_path,
