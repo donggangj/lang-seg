@@ -300,10 +300,9 @@ class LSeg(BaseModel):
             posemb[:, : model.start_index],
             posemb[0, model.start_index:],
         )
+        gs_old = torch.sqrt(torch.tensor(posemb_grid.shape)[0])
 
-        gs_old = int(math.sqrt(len(posemb_grid)))
-
-        posemb_grid = posemb_grid.reshape(1, gs_old, gs_old, -1).permute(0, 3, 1, 2)
+        posemb_grid = posemb_grid.reshape(1, int(gs_old), int(gs_old), -1).permute(0, 3, 1, 2)
         posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w), mode="bilinear")
         posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_h * gs_w, -1)
 
