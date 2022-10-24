@@ -431,8 +431,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
         # grid evaluation
         for idh in range(int(h_grids)):
             for idw in range(int(w_grids)):
-                h0 = torch.tensor(idh * stride, dtype=torch.int32)
-                w0 = torch.tensor(idw * stride, dtype=torch.int32)
+                h0 = (idh * stride).to(torch.int32)
+                w0 = (idw * stride).to(torch.int32)
                 h1 = torch.min(h0 + crop_size, ph)
                 w1 = torch.min(w0 + crop_size, pw)
                 crop_img = crop_image(pad_img, h0, h1, w0, w1)
@@ -452,14 +452,14 @@ class LSegMultiEvalAlter(torch.nn.Module):
         batch, h, w = shape[0], shape[2], shape[3]
         scores = torch.zeros(batch, self.nclass, h, w).cuda()
         for scale in torch.tensor(self.scales):
-            long_size = torch.ceil(torch.tensor(base_size * scale)).to(torch.int32)
+            long_size = torch.ceil(base_size * scale).to(torch.int32)
             if h > w:
                 height = long_size
-                width = torch.floor(torch.tensor(1.0 * w * long_size / h + 0.5)).to(torch.int32)
+                width = torch.floor(1.0 * w * long_size / h + 0.5).to(torch.int32)
                 short_size = width
             else:
                 width = long_size
-                height = torch.floor(torch.tensor(1.0 * h * long_size / w + 0.5)).to(torch.int32)
+                height = torch.floor(1.0 * h * long_size / w + 0.5).to(torch.int32)
                 short_size = height
             # resize image to current size
             cur_img = F.interpolate(image, (int(height), int(width)), mode='bilinear', align_corners=True)
@@ -478,8 +478,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 shape = get_shape(pad_img)
                 ph, pw = shape[2], shape[3]  # .size()
                 # grid forward and normalize
-                h_grids = torch.tensor(torch.ceil(1.0 * (ph - crop_size) / stride), dtype=torch.int32) + 1
-                w_grids = torch.tensor(torch.ceil(1.0 * (pw - crop_size) / stride), dtype=torch.int32) + 1
+                h_grids = torch.ceil(1.0 * (ph - crop_size) / stride).to(torch.int32) + 1
+                w_grids = torch.ceil(1.0 * (pw - crop_size) / stride).to(torch.int32) + 1
                 outputs, count_norm = self.grid_eval(pad_img, label_set, h_grids, w_grids, crop_size, stride)
                 outputs = outputs / count_norm
                 outputs = outputs[:, :, :height, :width]
