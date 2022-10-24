@@ -426,8 +426,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
                   crop_size: Tensor, stride: Tensor):
         pad_shape = get_shape(pad_img)
         batch, ph, pw = pad_shape[0], pad_shape[2], pad_shape[3]  # .size()
-        outputs = torch.zeros(batch, self.nclass, ph, pw).cuda()
-        count_norm = torch.zeros(batch, 1, ph, pw).cuda()
+        outputs = torch.zeros(batch, self.nclass, ph, pw).to(pad_img.device)
+        count_norm = torch.zeros(batch, 1, ph, pw).to(pad_img.device)
         # grid evaluation
         for idh in range(int(h_grids)):
             for idw in range(int(w_grids)):
@@ -450,7 +450,7 @@ class LSegMultiEvalAlter(torch.nn.Module):
         crop_size = torch.tensor(self.crop_size)
         shape = get_shape(image)
         batch, h, w = shape[0], shape[2], shape[3]
-        scores = torch.zeros(batch, self.nclass, h, w).cuda()
+        scores = torch.zeros(batch, self.nclass, h, w).to(image.device)
         for scale in torch.tensor(self.scales):
             long_size = torch.ceil(base_size * scale).to(torch.int32)
             if h > w:
