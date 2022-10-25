@@ -377,19 +377,23 @@ def main():
         model_onnx.eval()
         with torch.no_grad():
             onnx_out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
-            show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_onnx.jpg')
+            show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg')
             ex_to_onnx(torch.jit.script(model_onnx),
                        (image.cuda(), clip.tokenize(labels).cuda()),
                        onnx_path,
                        export_params=True,
-                       opset_version=12,
+                       opset_version=14,
                        do_constant_folding=True,
                        input_names=['image',
                                     'label_tokens'],
                        output_names=['label_map'],
                        dynamic_axes={'image': {2: 'image_h', 3: 'image_w'},
                                      'label_tokens': {0: 'n_tokens'},
-                                     'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}})
+                                     'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}},
+                       verbose=True)
+    else:
+        print(f'Testing ONNX......')
+    print(f'Finished exporting/testing')
 
 
 if __name__ == '__main__':
