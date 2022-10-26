@@ -1,5 +1,6 @@
 import math
 import types
+from typing import List
 
 import torch
 import torch.nn as nn
@@ -87,7 +88,8 @@ class Unflatten(nn.Module):
     def forward(self, x, size: torch.Tensor):
         shape = torch.tensor(x.shape)
         new_shape = torch.cat((shape[:self.dim], size, shape[self.dim + 1:]))
-        return x.view(new_shape.tolist())
+        new_shape_tolist: List[int] = new_shape.tolist()
+        return x.view(new_shape_tolist)
 
 
 class BaseModel(torch.nn.Module):
