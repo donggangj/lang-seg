@@ -6,8 +6,7 @@ import numpy as np
 
 import torch
 
-from encoding.models.sseg import BaseNet
-from modules.lseg_module import LSegModule
+from modules.lseg_inference import LSegInference
 from additional_utils.models import LSeg_MultiEvalModule, LSegMultiEvalAlter
 
 import clip
@@ -276,7 +275,7 @@ def main():
     args.weights = 'checkpoints/demo_e200.ckpt'
     args.ignore_index = 255
 
-    module = LSegModule.load_from_checkpoint(
+    module = LSegInference.load_from_checkpoint(
         checkpoint_path=args.weights,
         data_path=args.data_path,
         dataset=args.dataset,
@@ -310,10 +309,7 @@ def main():
     )
 
     # model
-    if isinstance(module.net, BaseNet):
-        model = module.net
-    else:
-        model = module
+    model = module
 
     model = model.eval()
     model = model.cpu()
