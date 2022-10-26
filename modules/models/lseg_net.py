@@ -79,6 +79,17 @@ class bottleneck_block(nn.Module):
         return x
 
 
+class Unflatten(nn.Module):
+    def __init__(self, dim):
+        super(Unflatten, self).__init__()
+        self.dim = dim
+
+    def forward(self, x, size: torch.Tensor):
+        shape = torch.tensor(x.shape)
+        new_shape = torch.cat((shape[:self.dim], size, shape[self.dim + 1:]))
+        return x.view(new_shape.tolist())
+
+
 class BaseModel(torch.nn.Module):
     def load(self, path):
         """Load model from file.
@@ -136,6 +147,8 @@ class LSeg(BaseModel):
             hooks=self.vision_hook_ids,
             use_readout=readout,
         )
+
+        self.unflatten = Unflatten(dim=2)
 
         self.scratch.refinenet1 = _make_fusion_block(features, use_bn)
         self.scratch.refinenet2 = _make_fusion_block(features, use_bn)
@@ -233,17 +246,16 @@ class LSeg(BaseModel):
         layer_3 = self.act_postprocessing3(layer_3)
         layer_4 = self.act_postprocessing4(layer_4)
 
-        dim = 2
-        unflattened_size = [h // pretrained.model.patch_size[1],
-                            w // pretrained.model.patch_size[0]]
+        unflattened_size = torch.tensor([h // pretrained.model.patch_size[1],
+                                         w // pretrained.model.patch_size[0]])
         if layer_1.ndim == 3:
-            layer_1 = layer_1.unflatten(dim, unflattened_size)
+            layer_1 = self.unflatten(layer_1, unflattened_size)
         if layer_2.ndim == 3:
-            layer_2 = layer_2.unflatten(dim, unflattened_size)
+            layer_2 = self.unflatten(layer_2, unflattened_size)
         if layer_3.ndim == 3:
-            layer_3 = layer_3.unflatten(dim, unflattened_size)
+            layer_3 = self.unflatten(layer_3, unflattened_size)
         if layer_4.ndim == 3:
-            layer_4 = layer_4.unflatten(dim, unflattened_size)
+            layer_4 = self.unflatten(layer_4, unflattened_size)
 
         layer_1 = self.act_postprocessing5(layer_1)
         layer_2 = self.act_postprocessing6(layer_2)
