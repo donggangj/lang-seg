@@ -210,6 +210,7 @@ class LSegInference(LSegModuleInference):
             self.crop_size,
         )
 
+        self._up_kwargs = {}
         self.mean = norm_mean
         self.std = norm_std
 
