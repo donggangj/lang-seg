@@ -9,7 +9,7 @@ from torch.nn.parameter import Parameter
 import torch.nn.functional as F
 
 
-class LayerNorm(nn.Module):
+class LayerNorm(nn.LayerNorm):
     """
     From clip/model.py.
 
@@ -28,9 +28,6 @@ class LayerNorm(nn.Module):
 
     Subclass torch's LayerNorm to handle fp16.
     """
-
-    def __init__(self, *args, **kwargs):
-        super(LayerNorm, self).__init__()
 
     def forward(self, x: torch.Tensor):
         orig_type = x.dtype
