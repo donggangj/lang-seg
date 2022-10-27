@@ -138,7 +138,7 @@ class MultiheadAttentionCustom(nn.Module):
 
         super(MultiheadAttentionCustom, self).__setstate__(state)
 
-    def forward(self, query: Tensor, key: Tensor, value: Tensor) -> Tuple[Tensor, Optional[Tensor]]:
+    def forward(self, query: Tensor, key: Tensor, value: Tensor, attn_mask: Tensor) -> Tuple[Tensor, Optional[Tensor]]:
 
         attn_output, attn_output_weights = F.multi_head_attention_forward(
             query, key, value, self.embed_dim, self.num_heads,
@@ -147,7 +147,7 @@ class MultiheadAttentionCustom(nn.Module):
             self.dropout, self.out_proj.weight, self.out_proj.bias,
             training=False,
             key_padding_mask=None, need_weights=False,
-            attn_mask=None, average_attn_weights=True)
+            attn_mask=attn_mask, average_attn_weights=True)
 
         return attn_output, attn_output_weights
 
@@ -156,7 +156,7 @@ class ResidualAttentionBlockCustom(nn.Module):
     """
     Add to clip/model.py
     """
-    def __init__(self, d_model: int, n_head: int):
+    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor):
         super().__init__()
 
         self.attn = MultiheadAttentionCustom(d_model, n_head)
@@ -167,9 +167,10 @@ class ResidualAttentionBlockCustom(nn.Module):
             ("c_proj", nn.Linear(d_model * 4, d_model))
         ]))
         self.ln_2 = LayerNorm(d_model)
+        self.attn_mask = attn_mask
 
     def attention(self, x: torch.Tensor):
-        return self.attn(x, x, x)[0]
+        return self.attn(x, x, x, attn_mask=self.attn_mask.to(dtype=x.dtype, device=x.device))[0]
 
     def forward(self, x: torch.Tensor):
         x = x + self.attention(self.ln_1(x))
