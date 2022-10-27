@@ -184,3 +184,17 @@ class ResidualAttentionBlockCustom(nn.Module):
         x = x + self.attention(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
+
+
+class TransformerCustom(nn.Module):
+    """
+    Add to clip/model.py
+    """
+    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor):
+        super().__init__()
+        self.width = width
+        self.layers = layers
+        self.resblocks = nn.Sequential(*[ResidualAttentionBlockCustom(width, heads, attn_mask) for _ in range(layers)])
+
+    def forward(self, x: torch.Tensor):
+        return self.resblocks(x)
