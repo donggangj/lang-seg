@@ -44,6 +44,10 @@ class CLIP(nn.Module):
 
     ORIGINAL CODE:
     =====================================================
+    @property
+    def dtype(self):
+        return self.visual.conv1.weight.dtype
+
     def forward(self, image, text):
         image_features = self.encode_image(image)
         text_features = self.encode_text(text)
@@ -61,6 +65,10 @@ class CLIP(nn.Module):
         return logits_per_image, logits_per_text
     =====================================================
     """
+
+    @property
+    def dtype(self):
+        return self.transformer.resblocks[0].attn.in_proj_weight.dtype
 
     def forward(self, image, text):
         image_features = self.encode_image(image)
