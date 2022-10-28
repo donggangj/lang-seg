@@ -321,12 +321,12 @@ def main():
 
     model.mean = [0.5, 0.5, 0.5]
     model.std = [0.5, 0.5, 0.5]
-    model.net.init_act_postprocessing()
 
     evaluator = LSeg_MultiEvalModule(
         model, scales=scales, flip=True
     ).cuda()
     evaluator.eval()
+    model.net.init_after_loading()
 
     img_path = 'inputs/cat1.jpeg'
     # img_path = 'inputs/catdog.png'
