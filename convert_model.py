@@ -310,6 +310,7 @@ def main():
 
     # model
     model = module
+    del module
 
     model = model.eval()
     model = model.cpu()
@@ -365,16 +366,20 @@ def main():
     predict = predicts[0]
 
     show_result(image, predict, labels, alpha, './tmp.jpg')
+    del evaluator, outputs, predict, predicts
 
     onnx_path: str = args.onnx_path
     if not exists(onnx_path):
         model_onnx = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
                                         sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
         model_onnx.eval()
+        del model
         with torch.no_grad():
             onnx_out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
             show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg')
-            ex_to_onnx(torch.jit.script(model_onnx),
+            scripted_model = torch.jit.script(model_onnx)
+            del model_onnx, onnx_out
+            ex_to_onnx(scripted_model,
                        (image.cuda(), clip.tokenize(labels).cuda()),
                        onnx_path,
                        export_params=True,
