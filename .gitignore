@@ -132,3 +132,8 @@ logs/
 
 # Dataset
 ADEChallengeData2016
+
+# IDE config
+.idea
+.vscode
+
