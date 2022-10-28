@@ -176,6 +176,8 @@ class LSeg(BaseModel):
             use_readout=readout,
         )
 
+        self.text_encoder = None
+
         self.unflatten = Unflatten(dim=2)
 
         self.scratch.refinenet1 = _make_fusion_block(features, use_bn)
@@ -201,6 +203,10 @@ class LSeg(BaseModel):
         self.scratch.output_conv = head
 
         self.text = clip.tokenize(self.labels)
+
+    def init_after_loading(self):
+        self.init_act_postprocessing()
+        self.text_encoder = torch.jit.trace(TextEncoder(self.clip_pretrained), self.text.cuda())
 
     def init_act_postprocessing(self):
         act_postprocessing = (self.pretrained.act_postprocess1[:2],
@@ -237,7 +243,7 @@ class LSeg(BaseModel):
 
         text = text.to(x.device)
         self.logit_scale = self.logit_scale.to(x.device)
-        text_features = self.clip_pretrained.encode_text(text)
+        text_features = self.text_encoder(text)
 
         image_features = self.scratch.head1(path_1)
 
