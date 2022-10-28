@@ -262,17 +262,18 @@ def parallel_apply(modules, inputs, label_set, kwargs_tup=None, devices=None):
 
 @torch.jit.script
 def get_shape(x: Tensor):
-    return torch.tensor(x.shape)
+    return torch.tensor(x.shape, device=x.device)
 
 
 @torch.jit.script
 def pad_image_script(img, mean, std, crop_size):
     shape = get_shape(img)
     b, c, h, w = shape[0], shape[1], shape[2], shape[3]
-    padh = crop_size - h if h < crop_size else torch.tensor(0)
-    padw = crop_size - w if w < crop_size else torch.tensor(0)
+    device = img.device
+    padh = crop_size - h if h < crop_size else torch.tensor(0, device=device)
+    padw = crop_size - w if w < crop_size else torch.tensor(0, device=device)
     pad_values = -mean / std
-    img_pad = torch.zeros(b, c, h + padh, w + padw).to(img.device)
+    img_pad = torch.zeros(b, c, h + padh, w + padw).to(device)
     for i in range(int(c)):
         # note that pytorch pad params is in reversed orders
         img_pad[:, i, :, :] = F.pad(img[:, i, :, :], (0, int(padw), 0, int(padh)), value=pad_values[i])
@@ -410,7 +411,7 @@ class LSegMultiEvalAlter(torch.nn.Module):
         if n_class > 0:
             self.nclass = n_class
         stride_rate = 2.0 / 3.0
-        stride = torch.tensor(self.crop_size * stride_rate, dtype=torch.int32)
+        stride = torch.tensor(self.crop_size * stride_rate, dtype=torch.int32).to(image.device)
 
         return self.loop_scale(image, tokens, stride)
 
@@ -446,12 +447,12 @@ class LSegMultiEvalAlter(torch.nn.Module):
         return outputs, count_norm
 
     def loop_scale(self, image: Tensor, label_set: Tensor, stride: Tensor):
-        base_size = torch.tensor(self.base_size)
-        crop_size = torch.tensor(self.crop_size)
+        base_size = torch.tensor(self.base_size).to(image.device)
+        crop_size = torch.tensor(self.crop_size).to(image.device)
         shape = get_shape(image)
         batch, h, w = shape[0], shape[2], shape[3]
         scores = torch.zeros(batch, self.nclass, h, w).to(image.device)
-        for scale in torch.tensor(self.scales):
+        for scale in torch.tensor(self.scales).to(image.device):
             long_size = torch.ceil(base_size * scale).to(torch.int32)
             if h > w:
                 height = long_size
