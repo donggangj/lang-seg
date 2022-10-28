@@ -207,6 +207,9 @@ class LSeg(BaseModel):
     def init_after_loading(self):
         self.init_act_postprocessing()
         self.text_encoder = torch.jit.trace(TextEncoder(self.clip_pretrained), self.text.cuda())
+        clip_pretrained = self.clip_pretrained
+        self.clip_pretrained = None
+        del clip_pretrained
 
     def init_act_postprocessing(self):
         act_postprocessing = (self.pretrained.act_postprocess1[:2],
