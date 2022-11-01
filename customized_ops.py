@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Tuple, Optional
+from typing import Tuple, Union, Optional
 
 import torch
 from torch import nn, Tensor
@@ -51,6 +51,16 @@ class CLIP(nn.Module):
 
     ORIGINAL CODE:
     =====================================================
+    def __init__(...):
+        ...
+        self.transformer = Transformer(
+            width=transformer_width,
+            layers=transformer_layers,
+            heads=transformer_heads,
+            attn_mask=self.build_attention_mask()
+        )
+        ...
+
     @property
     def dtype(self):
         return self.visual.conv1.weight.dtype
@@ -72,6 +82,30 @@ class CLIP(nn.Module):
         return logits_per_image, logits_per_text
     =====================================================
     """
+
+    def __init__(self,
+                 embed_dim: int,
+                 # vision
+                 image_resolution: int,
+                 vision_layers: Union[Tuple[int, int, int, int], int],
+                 vision_width: int,
+                 vision_patch_size: int,
+                 # text
+                 context_length: int,
+                 vocab_size: int,
+                 transformer_width: int,
+                 transformer_heads: int,
+                 transformer_layers: int
+                 ):
+        super().__init__()
+
+        # Replace corresponding part only
+        self.transformer = TransformerCustom(
+            width=transformer_width,
+            layers=transformer_layers,
+            heads=transformer_heads,
+            attn_mask=self.build_attention_mask()
+        )
 
     @property
     def dtype(self):
