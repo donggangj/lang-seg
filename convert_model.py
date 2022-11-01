@@ -386,7 +386,7 @@ def main():
     predict = predicts[0]
 
     show_result(image, predict, labels, alpha, './tmp.jpg')
-    del evaluator, outputs, predict, predicts
+    del evaluator, predict, predicts
 
     onnx_path: str = args.onnx_path
     if not exists(onnx_path):
@@ -396,7 +396,9 @@ def main():
         del model
         with torch.no_grad():
             onnx_out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
-            show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg')
+            mae, rmse = calc_loss(onnx_out.cpu().numpy(), outputs[0].cpu().numpy(), 'compare_script_with_torch.txt')
+            title = f'MAE={mae:.3e}, RMSE={rmse:.3e}'
+            show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg', title)
             scripted_model = torch.jit.script(model_onnx)
             del model_onnx, onnx_out
             ex_to_onnx(scripted_model,
