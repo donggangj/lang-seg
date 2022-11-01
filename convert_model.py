@@ -3,6 +3,8 @@
 from os.path import exists
 import argparse
 import numpy as np
+from numpy import ndarray
+from typing import Optional, List
 
 import torch
 
@@ -259,6 +261,23 @@ def show_result(image, predict, labels, alpha, save_path):
     axes[2].axis('off')
     axes[2].legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
     fig.savefig(save_path)
+
+
+def calc_loss(pred: ndarray, ref: ndarray, loss_path: Optional[str] = ''):
+    ae_mat = abs(pred[0] - ref)
+    mae = ae_mat.mean()
+    se_mat = ae_mat ** 2
+    rse_mat = np.sqrt(se_mat)
+    rmse = np.sqrt(se_mat.mean())
+    with open(loss_path or 'loss.txt', 'w') as f:
+        f.write(f'MAE={mae:g}\n'
+                f'AE mat:\n'
+                f'{ae_mat}\n'
+                f'\n'
+                f'RMSE={rmse:g}\n'
+                f'RSE mat:\n'
+                f'{rse_mat}\n')
+    return mae, rmse
 
 
 def main():
