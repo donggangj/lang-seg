@@ -7,6 +7,16 @@ from torch.nn.init import constant_, xavier_normal_, xavier_uniform_
 from torch.nn.modules.linear import NonDynamicallyQuantizableLinear
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
+"""
+Add import to clip/model.py
+=====================================================
+from typing import  Optional
+from torch import Tensor
+from torch.nn.init import constant_, xavier_normal_, xavier_uniform_
+from torch.nn.modules.linear import NonDynamicallyQuantizableLinear
+from torch.nn.parameter import Parameter
+=====================================================
+"""
 
 
 class LayerNorm(nn.LayerNorm):
