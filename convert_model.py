@@ -281,6 +281,27 @@ def calc_loss(pred: ndarray, ref: ndarray, loss_path: Optional[str] = ''):
     return mae, rmse
 
 
+def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
+              alpha=0.5, save_path='./tmp_onnx.jpg',
+              ref: Optional[torch.Tensor] = None, loss_path: Optional[str] = ''):
+    import onnxruntime
+
+    def to_numpy(tensor: torch.Tensor):
+        return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
+
+    tokens = clip.tokenize(labels)
+    sess = onnxruntime.InferenceSession(onnx_path)
+    x = {_in.name: to_numpy(_t) for _in, _t in zip(sess.get_inputs(), (image, tokens))}
+    pred = sess.run(None, x)
+    if ref:
+        mae, rmse = calc_loss(pred[0], to_numpy(ref), loss_path)
+        title = f'MAE={mae:.3e}, RMSE={rmse:.3e}'
+    else:
+        title = ''
+    show_result(image, np.max(pred[0], 1)[1], labels, alpha, save_path, title)
+    return pred
+
+
 def main():
     args = Options().parse()
 
@@ -416,6 +437,7 @@ def main():
                        verbose=True)
     else:
         print(f'Testing ONNX......')
+        test_onnx(onnx_path, image, labels, alpha, './tmp_onnx.jpg', outputs[0], 'compare_onnx_with_torch.txt')
     print(f'Finished exporting/testing')
 
 
