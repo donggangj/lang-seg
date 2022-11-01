@@ -295,7 +295,7 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
     pred = sess.run(None, x)
     if ref:
         mae, rmse = calc_loss(pred[0], to_numpy(ref), loss_path)
-        title = f'MAE={mae:.3e}, RMSE={rmse:.3e}'
+        title = f'ONNX inference: MAE={mae:.3e}, RMSE={rmse:.3e}'
     else:
         title = ''
     show_result(image, np.max(pred[0], 1)[1], labels, alpha, save_path, title)
@@ -406,7 +406,7 @@ def main():
 
     predict = predicts[0]
 
-    show_result(image, predict, labels, alpha, './tmp.jpg')
+    show_result(image, predict, labels, alpha, './tmp.jpg', 'visualization of torch model inference')
     del evaluator, predict, predicts
 
     onnx_path: str = args.onnx_path
@@ -418,7 +418,7 @@ def main():
         with torch.no_grad():
             onnx_out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
             mae, rmse = calc_loss(onnx_out.cpu().numpy(), outputs[0].cpu().numpy(), 'compare_script_with_torch.txt')
-            title = f'MAE={mae:.3e}, RMSE={rmse:.3e}'
+            title = f'Scripted inference: MAE={mae:.3e}, RMSE={rmse:.3e}'
             show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg', title)
             scripted_model = torch.jit.script(model_onnx)
             del model_onnx, onnx_out
