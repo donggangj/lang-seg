@@ -242,7 +242,7 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
     return out_img, patches
 
 
-def show_result(image, predict, labels, alpha, save_path):
+def show_result(image, predict, labels, alpha, save_path, title=''):
     # show results
     new_palette = get_new_pallete(len(labels))
     mask, patches = get_new_mask_pallete(predict, new_palette, out_label_flag=True, labels=labels)
@@ -257,6 +257,7 @@ def show_result(image, predict, labels, alpha, save_path):
     axes[0].axis('off')
     axes[1].imshow(out)
     axes[1].axis('off')
+    axes[1].set_title(title)
     axes[2].imshow(seg)
     axes[2].axis('off')
     axes[2].legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
