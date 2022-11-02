@@ -272,6 +272,33 @@ class LSeg(BaseModel):
 
         return out
 
+    def forward_vit_custom(self, x):
+        model = self.pretrained.model
+        b, c, h, w = x.shape
+
+        # encoder
+        layer_1, layer_2, layer_3, layer_4 = self.forward_flex_custom(x)
+
+        layer_1 = self.act_postprocessing1(layer_1)
+        layer_2 = self.act_postprocessing2(layer_2)
+        layer_3 = self.act_postprocessing3(layer_3)
+        layer_4 = self.act_postprocessing4(layer_4)
+
+        unflattened_size = torch.tensor([h // model.patch_size[1],
+                                         w // model.patch_size[0]],
+                                        device=x.device)
+        layer_1 = self.unflatten(layer_1, unflattened_size)
+        layer_2 = self.unflatten(layer_2, unflattened_size)
+        layer_3 = self.unflatten(layer_3, unflattened_size)
+        layer_4 = self.unflatten(layer_4, unflattened_size)
+
+        layer_1 = self.act_postprocessing5(layer_1)
+        layer_2 = self.act_postprocessing6(layer_2)
+        layer_3 = self.act_postprocessing7(layer_3)
+        layer_4 = self.act_postprocessing8(layer_4)
+
+        return layer_1, layer_2, layer_3, layer_4
+
     def forward_vit(self, x):
         model = self.pretrained.model
         b, c, h, w = x.shape
