@@ -303,6 +303,33 @@ class LSeg(BaseModel):
 
         return layer_1, layer_2, layer_3, layer_4
 
+    def forward_flex_custom(self, x):
+        vision_hook_ids = self.vision_hook_ids
+        model = self.pretrained.model
+        layers = []
+        b, c, h, w = x.shape
+
+        pos_embed = self._resize_pos_embed(model.pos_embed, h // model.patch_size[1], w // model.patch_size[0])
+
+        B = x.shape[0]
+
+        x = model.patch_embed.proj(x).flatten(2).transpose(1, 2)
+
+        cls_tokens = model.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
+        x = torch.cat((cls_tokens, x), dim=1)
+
+        x = x + pos_embed
+        x = model.pos_drop(x)
+
+        for i, blk in enumerate(model.blocks):
+            x = blk(x)
+            if i in vision_hook_ids:
+                layers.append(x)
+
+        x = model.norm(x)
+
+        return layers
+
     def forward_flex(self, x):
         vision_hook_ids = self.vision_hook_ids
         model = self.pretrained.model
