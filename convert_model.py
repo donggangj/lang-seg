@@ -411,17 +411,17 @@ def main():
 
     onnx_path: str = args.onnx_path
     if not exists(onnx_path):
-        model_onnx = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
-                                        sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
-        model_onnx.eval()
+        model_alter = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
+                                         sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
+        model_alter.eval()
         del model
         with torch.no_grad():
-            onnx_out = model_onnx(image.cuda(), clip.tokenize(labels).cuda())
+            scripted_model = torch.jit.script(model_alter)
+            del model_alter
+            onnx_out = scripted_model(image.cuda(), clip.tokenize(labels).cuda())
             mae, rmse = calc_loss(onnx_out.cpu().numpy(), outputs[0].cpu().numpy(), 'compare_script_with_torch.txt')
             title = f'Scripted inference: MAE={mae:.3e}, RMSE={rmse:.3e}'
             show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg', title)
-            scripted_model = torch.jit.script(model_onnx)
-            del model_onnx, onnx_out
             ex_to_onnx(scripted_model,
                        (image.cuda(), clip.tokenize(labels).cuda()),
                        onnx_path,
