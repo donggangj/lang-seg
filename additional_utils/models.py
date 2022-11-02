@@ -172,7 +172,7 @@ def crop_image(img, h0: int, h1: int, w0: int, w1: int):
 
 def flip_image(img):
     assert (img.dim() == 4)
-    idx = torch.arange(img.size(3) - 1, -1, -1).type_as(img).long().to(img.device)
+    idx = torch.arange(img.size(3) - 1, -1, -1, device=img.device).type_as(img).long()
     return img.index_select(3, idx)
 
 
@@ -273,7 +273,7 @@ def pad_image_script(img, mean, std, crop_size):
     padh = crop_size - h if h < crop_size else torch.tensor(0, device=device)
     padw = crop_size - w if w < crop_size else torch.tensor(0, device=device)
     pad_values = -mean / std
-    img_pad = torch.zeros(b, c, h + padh, w + padw).to(device)
+    img_pad = torch.zeros(b, c, h + padh, w + padw, device=device)
     for i in range(int(c)):
         # note that pytorch pad params is in reversed orders
         img_pad[:, i, :, :] = F.pad(img[:, i, :, :], (0, int(padw), 0, int(padh)), value=pad_values[i])
@@ -427,8 +427,9 @@ class LSegMultiEvalAlter(torch.nn.Module):
                   crop_size: Tensor, stride: Tensor):
         pad_shape = get_shape(pad_img)
         batch, ph, pw = pad_shape[0], pad_shape[2], pad_shape[3]  # .size()
-        outputs = torch.zeros(batch, self.nclass, ph, pw).to(pad_img.device)
-        count_norm = torch.zeros(batch, 1, ph, pw).to(pad_img.device)
+        device = pad_img.device
+        outputs = torch.zeros(batch, self.nclass, ph, pw, device=device)
+        count_norm = torch.zeros(batch, 1, ph, pw, device=device)
         # grid evaluation
         for idh in range(int(h_grids)):
             for idw in range(int(w_grids)):
@@ -451,8 +452,9 @@ class LSegMultiEvalAlter(torch.nn.Module):
         crop_size = torch.tensor(self.crop_size).to(image.device)
         shape = get_shape(image)
         batch, h, w = shape[0], shape[2], shape[3]
-        scores = torch.zeros(batch, self.nclass, h, w).to(image.device)
-        for scale in torch.tensor(self.scales).to(image.device):
+        device = image.device
+        scores = torch.zeros(batch, self.nclass, h, w, device=device)
+        for scale in torch.tensor(self.scales, device=device):
             long_size = torch.ceil(base_size * scale).to(torch.int32)
             if h > w:
                 height = long_size
