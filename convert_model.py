@@ -426,7 +426,7 @@ def main():
                        (image.cuda(), clip.tokenize(labels).cuda()),
                        onnx_path,
                        export_params=True,
-                       opset_version=14,
+                       opset_version=16,
                        do_constant_folding=True,
                        input_names=['image',
                                     'label_tokens'],
