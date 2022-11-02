@@ -345,11 +345,9 @@ class LSeg(BaseModel):
 
     def _resize_pos_embed(self, posemb, gs_h: int, gs_w: int):
         model = self.pretrained.model
-        posemb_tok, posemb_grid = (
-            posemb[:, : model.start_index],
-            posemb[0, model.start_index:],
-        )
-        gs_old = torch.sqrt(torch.tensor(posemb_grid.shape)[0])
+        posemb_tok = posemb[:, :model.start_index]
+        posemb_grid = posemb[0, model.start_index:]
+        gs_old = torch.sqrt(torch.tensor(posemb_grid.shape[0], device=posemb.device))
 
         posemb_grid = posemb_grid.reshape(1, int(gs_old), int(gs_old), -1).permute(0, 3, 1, 2)
         posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w), mode="bilinear")
