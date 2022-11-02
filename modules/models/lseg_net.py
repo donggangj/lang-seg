@@ -224,6 +224,7 @@ class LSeg(BaseModel):
             setattr(self, f'act_postprocessing{i + 1}', act_postprocessing[i])
 
     def forward(self, x, tokens=torch.tensor([])):
+        device = x.device
         if tokens.numel() == 0:
             text = self.text
         else:
@@ -244,8 +245,8 @@ class LSeg(BaseModel):
         path_2 = self.scratch.refinenet2.forward_with_skip(path_3, layer_2_rn)
         path_1 = self.scratch.refinenet1.forward_with_skip(path_2, layer_1_rn)
 
-        text = text.to(x.device)
-        self.logit_scale = self.logit_scale.to(x.device)
+        text = text.to(device)
+        logit_scale = self.logit_scale.to(device)
         text_features = self.text_encoder(text)
 
         image_features = self.scratch.head1(path_1)
@@ -257,7 +258,7 @@ class LSeg(BaseModel):
         image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
 
-        logits_per_image = self.logit_scale * image_features.half() @ text_features.t()
+        logits_per_image = logit_scale * image_features.half() @ text_features.t()
 
         out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0, 3, 1, 2)
 
