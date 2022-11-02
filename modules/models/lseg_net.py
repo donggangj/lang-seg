@@ -86,7 +86,7 @@ class Unflatten(nn.Module):
         self.dim = dim
 
     def forward(self, x, size: torch.Tensor):
-        shape = torch.tensor(x.shape)
+        shape = torch.tensor(x.shape, device=x.device)
         new_shape = torch.cat((shape[:self.dim], size, shape[self.dim + 1:]))
         new_shape_tolist: List[int] = new_shape.tolist()
         return x.view(new_shape_tolist)
