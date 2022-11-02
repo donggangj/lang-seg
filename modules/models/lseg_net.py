@@ -285,7 +285,8 @@ class LSeg(BaseModel):
         layer_4 = self.act_postprocessing4(layer_4)
 
         unflattened_size = torch.tensor([h // model.patch_size[1],
-                                         w // model.patch_size[0]])
+                                         w // model.patch_size[0]],
+                                        device=x.device)
         if layer_1.ndim == 3:
             layer_1 = self.unflatten(layer_1, unflattened_size)
         if layer_2.ndim == 3:
