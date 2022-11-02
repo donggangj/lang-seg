@@ -459,16 +459,14 @@ class LSegMultiEvalAlter(torch.nn.Module):
         shape = image.shape
         batch, h, w = shape[0], shape[2], shape[3]
         scores = torch.zeros(batch, self.nclass, h, w, device=device)
+        long_h = h > w
+        hw_ratio = h / w
+        ratio = float(long_h) * (1. / hw_ratio - hw_ratio) + hw_ratio
         for scale in torch.tensor(self.scales, device=device):
-            long_size = torch.ceil(base_size * scale).to(torch.int32)
-            if h > w:
-                height = int(long_size)
-                width = int(1.0 * w * long_size / h + 0.5)
-                short_size = width
-            else:
-                width = int(long_size)
-                height = int(1.0 * h * long_size / w + 0.5)
-                short_size = height
+            long_size = int(torch.ceil(base_size * scale))
+            short_size = int(ratio * long_size + 0.5)
+            height = int(long_h) * (long_size - short_size) + short_size
+            width = int(long_h) * (short_size - long_size) + long_size
             # resize image to current size
             cur_img = F.interpolate(image, (height, width), mode='bilinear', align_corners=True)
             if long_size <= crop_size:
