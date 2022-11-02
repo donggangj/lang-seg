@@ -266,7 +266,7 @@ def get_shape(x: Tensor):
 
 
 @torch.jit.script
-def pad_image_script(img, mean, std, crop_size):
+def pad_image_script(img: Tensor, mean: Tensor, std: Tensor, crop_size: int):
     shape = get_shape(img)
     b, c, h, w = shape[0], shape[1], shape[2], shape[3]
     device = img.device
@@ -407,11 +407,11 @@ class LSegMultiEvalAlter(torch.nn.Module):
     def forward(self, image, tokens=torch.tensor([])):
         """Multi-size Evaluation"""
         # only single image is supported for evaluation
-        n_class = get_shape(tokens)[0]
+        n_class = tokens.shape[0]
         if n_class > 0:
             self.nclass = n_class
         stride_rate = 2.0 / 3.0
-        stride = torch.tensor(self.crop_size * stride_rate, dtype=torch.int32).to(image.device)
+        stride = int(self.crop_size * stride_rate)
 
         return self.loop_scale(image, tokens, stride)
 
@@ -423,20 +423,20 @@ class LSegMultiEvalAlter(torch.nn.Module):
             output += flip_image(foutput)
         return output
 
-    def grid_eval(self, pad_img: Tensor, label_set: Tensor, h_grids: Tensor, w_grids: Tensor,
-                  crop_size: Tensor, stride: Tensor):
-        pad_shape = get_shape(pad_img)
+    def grid_eval(self, pad_img: Tensor, label_set: Tensor, h_grids: int, w_grids: int,
+                  crop_size: int, stride: int):
+        pad_shape = pad_img.shape
         batch, ph, pw = pad_shape[0], pad_shape[2], pad_shape[3]  # .size()
         device = pad_img.device
         outputs = torch.zeros(batch, self.nclass, ph, pw, device=device)
         count_norm = torch.zeros(batch, 1, ph, pw, device=device)
         # grid evaluation
-        for idh in range(int(h_grids)):
-            for idw in range(int(w_grids)):
-                h0 = (idh * stride).to(torch.int32)
-                w0 = (idw * stride).to(torch.int32)
-                h1 = torch.min(h0 + crop_size, ph)
-                w1 = torch.min(w0 + crop_size, pw)
+        for idh in range(h_grids):
+            for idw in range(w_grids):
+                h0 = idh * stride
+                w0 = idw * stride
+                h1 = min(h0 + crop_size, ph)
+                w1 = min(w0 + crop_size, pw)
                 crop_img = crop_image(pad_img, h0, h1, w0, w1)
                 # pad if needed
                 pad_crop_img = pad_image_script(crop_img, self.mean,
@@ -447,25 +447,25 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 count_norm[:, :, h0:h1, w0:w1] += 1
         return outputs, count_norm
 
-    def loop_scale(self, image: Tensor, label_set: Tensor, stride: Tensor):
-        base_size = torch.tensor(self.base_size).to(image.device)
-        crop_size = torch.tensor(self.crop_size).to(image.device)
-        shape = get_shape(image)
+    def loop_scale(self, image: Tensor, label_set: Tensor, stride: int):
+        base_size = self.base_size
+        crop_size = self.crop_size
+        shape = image.shape
         batch, h, w = shape[0], shape[2], shape[3]
         device = image.device
         scores = torch.zeros(batch, self.nclass, h, w, device=device)
         for scale in torch.tensor(self.scales, device=device):
             long_size = torch.ceil(base_size * scale).to(torch.int32)
             if h > w:
-                height = long_size
-                width = torch.floor(1.0 * w * long_size / h + 0.5).to(torch.int32)
+                height = int(long_size)
+                width = int(1.0 * w * long_size / h + 0.5)
                 short_size = width
             else:
-                width = long_size
-                height = torch.floor(1.0 * h * long_size / w + 0.5).to(torch.int32)
+                width = int(long_size)
+                height = int(1.0 * h * long_size / w + 0.5)
                 short_size = height
             # resize image to current size
-            cur_img = F.interpolate(image, (int(height), int(width)), mode='bilinear', align_corners=True)
+            cur_img = F.interpolate(image, (height, width), mode='bilinear', align_corners=True)
             if long_size <= crop_size:
                 pad_img = pad_image_script(cur_img, self.mean,
                                            self.std, crop_size)
@@ -481,12 +481,12 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 shape = get_shape(pad_img)
                 ph, pw = shape[2], shape[3]  # .size()
                 # grid forward and normalize
-                h_grids = torch.ceil(1.0 * (ph - crop_size) / stride).to(torch.int32) + 1
-                w_grids = torch.ceil(1.0 * (pw - crop_size) / stride).to(torch.int32) + 1
+                h_grids = int(torch.ceil(1.0 * (ph - crop_size) / stride)) + 1
+                w_grids = int(torch.ceil(1.0 * (pw - crop_size) / stride)) + 1
                 outputs, count_norm = self.grid_eval(pad_img, label_set, h_grids, w_grids, crop_size, stride)
                 outputs = outputs / count_norm
                 outputs = outputs[:, :, :height, :width]
 
-            score = F.interpolate(outputs, (int(h), int(w)), mode='bilinear', align_corners=True)
+            score = F.interpolate(outputs, (h, w), mode='bilinear', align_corners=True)
             scores += score
         return scores
