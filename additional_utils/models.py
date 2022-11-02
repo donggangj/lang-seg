@@ -417,10 +417,13 @@ class LSegMultiEvalAlter(torch.nn.Module):
 
     def net_forward(self, image: Tensor, label_set):
         output = self.net(image, label_set)
-        if self.flip:
-            fimg = flip_image(image)
-            foutput = self.net(fimg, label_set)
-            output += flip_image(foutput)
+        return output
+
+    def net_forward_with_flip(self, image: Tensor, label_set):
+        output = self.net(image, label_set)
+        fimg = flip_image(image)
+        foutput = self.net(fimg, label_set)
+        output += flip_image(foutput)
         return output
 
     def grid_eval(self, pad_img: Tensor, label_set: Tensor, mean: Tensor, std: Tensor,
@@ -441,7 +444,7 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 # pad if needed
                 pad_crop_img = pad_image_script(crop_img, mean,
                                                 std, crop_size)
-                output = self.net_forward(pad_crop_img, label_set)
+                output = self.net_forward_with_flip(pad_crop_img, label_set)
                 outputs[:, :, h0:h1, w0:w1] += crop_image(output,
                                                           0, h1 - h0, 0, w1 - w0)
                 count_norm[:, :, h0:h1, w0:w1] += 1
@@ -471,7 +474,7 @@ class LSegMultiEvalAlter(torch.nn.Module):
             if long_size <= crop_size:
                 pad_img = pad_image_script(cur_img, mean,
                                            std, crop_size)
-                outputs = self.net_forward(pad_img, label_set)
+                outputs = self.net_forward_with_flip(pad_img, label_set)
                 outputs = crop_image(outputs, 0, height, 0, width)
             else:
                 if short_size < crop_size:
