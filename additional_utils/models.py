@@ -483,8 +483,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
                                                std, crop_size)
                 else:
                     pad_img = cur_img
-                shape = get_shape(pad_img)
-                ph, pw = shape[2], shape[3]  # .size()
+                pad_shape = get_shape(pad_img)
+                ph, pw = pad_shape[2], pad_shape[3]  # .size()
                 # grid forward and normalize
                 h_grids = int(torch.ceil(1.0 * (ph - crop_size) / stride)) + 1
                 w_grids = int(torch.ceil(1.0 * (pw - crop_size) / stride)) + 1
