@@ -270,8 +270,8 @@ def pad_image_script(img: Tensor, mean: Tensor, std: Tensor, crop_size: int):
     shape = get_shape(img)
     b, c, h, w = shape[0], shape[1], shape[2], shape[3]
     device = img.device
-    padh = crop_size - h if h < crop_size else torch.tensor(0, device=device)
-    padw = crop_size - w if w < crop_size else torch.tensor(0, device=device)
+    padh = (crop_size - h) * int(h < crop_size)
+    padw = (crop_size - w) * int(w < crop_size)
     pad_values = -mean / std
     img_pad = torch.zeros(b, c, h + padh, w + padw, device=device)
     for i in range(int(c)):
