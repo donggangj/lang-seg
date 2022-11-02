@@ -485,10 +485,10 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 # grid forward and normalize
                 h_grids = int(torch.ceil(1.0 * (ph - crop_size) / stride)) + 1
                 w_grids = int(torch.ceil(1.0 * (pw - crop_size) / stride)) + 1
-                outputs, count_norm = self.grid_eval(pad_img, label_set, mean, std,
+                tmp_out, count_norm = self.grid_eval(pad_img, label_set, mean, std,
                                                      h_grids, w_grids, crop_size, stride)
-                outputs = outputs / count_norm
-                outputs = outputs[:, :, :height, :width]
+                tmp_out = tmp_out / count_norm
+                outputs = tmp_out[:, :, :height, :width]
 
             score = F.interpolate(outputs, (h, w), mode='bilinear', align_corners=True)
             scores += score
