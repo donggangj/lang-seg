@@ -435,9 +435,8 @@ def main():
                                      'label_tokens': {0: 'n_tokens'},
                                      'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}},
                        verbose=True)
-    else:
-        print(f'Testing ONNX......')
-        test_onnx(onnx_path, image, labels, alpha, './tmp_onnx.jpg', outputs[0], 'compare_onnx_with_torch.txt')
+    print(f'Testing ONNX......')
+    test_onnx(onnx_path, image, labels, alpha, './tmp_onnx.jpg', outputs[0], 'compare_onnx_with_torch.txt')
     print(f'Finished exporting/testing')
 
 
