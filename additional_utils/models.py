@@ -421,9 +421,9 @@ class LSegMultiEvalAlter(torch.nn.Module):
 
     def net_forward_with_flip(self, image: Tensor, label_set):
         output = self.net(image, label_set)
-        fimg = flip_image(image)
+        fimg = image.flip(3)
         foutput = self.net(fimg, label_set)
-        output += flip_image(foutput)
+        output += foutput.flip(3)
         return output
 
     def grid_eval(self, pad_img: Tensor, label_set: Tensor, mean: Tensor, std: Tensor,
