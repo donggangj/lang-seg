@@ -410,8 +410,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
         n_class = tokens.shape[0]
         if n_class > 0:
             self.nclass = n_class
-        stride_rate = 2.0 / 3.0
-        stride = int(self.crop_size * stride_rate)
+        stride_rate = torch.tensor(2.0 / 3.0, device=image.device)
+        stride = int((self.crop_size * stride_rate).long())
 
         return self.loop_scale(image, tokens, stride)
 
