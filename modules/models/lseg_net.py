@@ -258,7 +258,7 @@ class LSeg(BaseModel):
         image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
 
-        logits_per_image = logit_scale * image_features.half() @ text_features.t()
+        logits_per_image = logit_scale.half() * image_features.half() @ text_features.t().half()
 
         out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0, 3, 1, 2)
 
