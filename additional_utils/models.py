@@ -459,14 +459,14 @@ class LSegMultiEvalAlter(torch.nn.Module):
         shape = image.shape
         batch, h, w = shape[0], shape[2], shape[3]
         scores = torch.zeros(batch, self.nclass, h, w, device=device)
-        long_h = h > w
+        long_h = torch.tensor(h > w, device=device)
         hw_ratio = h / w
-        ratio = float(long_h) * (1. / hw_ratio - hw_ratio) + hw_ratio
+        ratio = long_h * (1. / hw_ratio - hw_ratio) + hw_ratio
         for scale in torch.tensor(self.scales, device=device):
-            long_size = int(torch.ceil(base_size * scale))
-            short_size = int(ratio * long_size + 0.5)
-            height = int(long_h) * (long_size - short_size) + short_size
-            width = int(long_h) * (short_size - long_size) + long_size
+            long_size = int(torch.ceil(base_size * scale).long())
+            short_size = int((ratio * long_size + 0.5).long())
+            height = int((long_h * (long_size - short_size) + short_size).long())
+            width = int((long_h * (short_size - long_size) + long_size).long())
             # resize image to current size
             cur_img = F.interpolate(image, (height, width), mode='bilinear', align_corners=True)
             if long_size <= crop_size:
@@ -484,8 +484,8 @@ class LSegMultiEvalAlter(torch.nn.Module):
                 pad_shape = get_shape(pad_img)
                 ph, pw = pad_shape[2], pad_shape[3]  # .size()
                 # grid forward and normalize
-                h_grids = int(torch.ceil(1.0 * (ph - crop_size) / stride)) + 1
-                w_grids = int(torch.ceil(1.0 * (pw - crop_size) / stride)) + 1
+                h_grids = int(torch.ceil(1.0 * (ph - crop_size) / stride).long()) + 1
+                w_grids = int(torch.ceil(1.0 * (pw - crop_size) / stride).long()) + 1
                 tmp_out, count_norm = self.grid_eval(pad_img, label_set, mean, std,
                                                      h_grids, w_grids, crop_size, stride)
                 tmp_out = tmp_out / count_norm
