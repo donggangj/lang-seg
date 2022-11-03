@@ -403,7 +403,7 @@ class LSeg(BaseModel):
         model = self.pretrained.model
         posemb_tok = posemb[:, :model.start_index]
         posemb_grid = posemb[0, model.start_index:]
-        gs_old = torch.sqrt(torch.tensor(posemb_grid.shape[0], device=posemb.device))
+        gs_old = torch.sqrt(torch.tensor(posemb_grid.shape[0], device=posemb.device)).long()
 
         posemb_grid = posemb_grid.reshape(1, int(gs_old), int(gs_old), -1).permute(0, 3, 1, 2)
         posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w), mode="bilinear")
