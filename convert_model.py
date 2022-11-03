@@ -290,7 +290,7 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
         return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
     tokens = clip.tokenize(labels)
-    sess = onnxruntime.InferenceSession(onnx_path)
+    sess = onnxruntime.InferenceSession(onnx_path, providers=['CUDAExecutionProvider'])
     x = {_in.name: to_numpy(_t) for _in, _t in zip(sess.get_inputs(), (image, tokens))}
     pred = sess.run(None, x)
     if ref:
