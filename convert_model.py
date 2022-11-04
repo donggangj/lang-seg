@@ -419,5 +419,18 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
     return outputs
 
 
+def main():
+    image_path = 'inputs/cat1.jpeg'
+    label = 'plant,grass,cat,stone,other'
+    alpha = 0.5
+    onnx_path = './LANG-SEG.onnx'
+    torch_out = inference(image_path=image_path, label=label, alpha=alpha,
+                          to_onnx=True, rewrite_onnx=False, onnx_path=onnx_path)
+    print(f'Testing ONNX......')
+    test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
+              save_path='./tmp_onnx.jpg', ref=torch_out[0], loss_path='compare_onnx_with_torch.txt')
+    print(f'Finished testing')
+
+
 if __name__ == '__main__':
-    inference()
+    main()
