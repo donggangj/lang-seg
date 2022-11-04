@@ -315,12 +315,11 @@ def load_image(image_path='inputs/cat1.jpeg'):
     return image
 
 
-def main():
+def main(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alpha=0.5):
     args = Options().parse()
 
     torch.manual_seed(args.seed)
     args.test_batch_size = 1
-    alpha = 0.5
 
     args.scale_inv = False
     args.widehead = True
@@ -372,17 +371,10 @@ def main():
     evaluator.eval()
     model.net.init_after_loading()
 
-    img_path = 'inputs/cat1.jpeg'
-    image = load_image(img_path)
+    image = load_image(image_path)
 
-    args.label_src = 'plant,grass,cat,stone,other'
-
-    labels = []
-    print('** Input label value: {} **'.format(args.label_src))
-    lines = args.label_src.split(',')
-    for line in lines:
-        label = line
-        labels.append(label)
+    print('** Input label value: {} **'.format(label))
+    labels = label.split(',')
 
     with torch.no_grad():
         # evaluator.forward(image, labels) #parallel_forward
