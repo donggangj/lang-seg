@@ -315,7 +315,8 @@ def load_image(image_path='inputs/cat1.jpeg'):
     return image
 
 
-def main(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alpha=0.5):
+def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alpha=0.5,
+              to_onnx=True, rewrite_onnx=False, onnx_path=''):
     args = Options().parse()
 
     torch.manual_seed(args.seed)
@@ -389,8 +390,8 @@ def main(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alp
     show_result(image, predict, labels, alpha, './tmp.jpg', 'visualization of torch model inference')
     del evaluator, predict, predicts
 
-    onnx_path: str = args.onnx_path
-    if not exists(onnx_path):
+    onnx_path: str = onnx_path or args.onnx_path
+    if to_onnx and (rewrite_onnx or not exists(onnx_path)):
         model_alter = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
                                          sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
         model_alter.eval()
@@ -415,10 +416,8 @@ def main(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alp
                                      'label_tokens': {0: 'n_tokens'},
                                      'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}},
                        verbose=True)
-    print(f'Testing ONNX......')
-    test_onnx(onnx_path, image, labels, alpha, './tmp_onnx.jpg', outputs[0], 'compare_onnx_with_torch.txt')
-    print(f'Finished exporting/testing')
+    return outputs
 
 
 if __name__ == '__main__':
-    main()
+    inference()
