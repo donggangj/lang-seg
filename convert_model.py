@@ -316,7 +316,7 @@ def main():
     args.weights = 'checkpoints/demo_e200.ckpt'
     args.ignore_index = 255
 
-    module = LSegInference.load_from_checkpoint(
+    model = LSegInference.load_from_checkpoint(
         checkpoint_path=args.weights,
         data_path=args.data_path,
         dataset=args.dataset,
@@ -342,17 +342,6 @@ def main():
         activation='lrelu',
     )
 
-    input_transform = module.val_transform
-
-    # dataloader
-    loader_kwargs = (
-        {"num_workers": args.workers, "pin_memory": True} if args.cuda else {}
-    )
-
-    # model
-    model = module
-    del module
-
     model = model.eval()
     model = model.cpu()
     scales = (
@@ -371,9 +360,6 @@ def main():
     model.net.init_after_loading()
 
     img_path = 'inputs/cat1.jpeg'
-    # img_path = 'inputs/catdog.png'
-    crop_size = 480
-    padding = [0.0] * 3
     image = Image.open(img_path)
     image = np.array(image)
     transform = transforms.Compose(
@@ -383,9 +369,6 @@ def main():
         ]
     )
     image = transform(image).unsqueeze(0)
-    img = image[0].permute(1, 2, 0)
-    img = img * 0.5 + 0.5
-    plt.imshow(img)
 
     args.label_src = 'plant,grass,cat,stone,other'
 
