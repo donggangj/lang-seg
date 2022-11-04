@@ -302,6 +302,19 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
     return pred
 
 
+def load_image(image_path='inputs/cat1.jpeg'):
+    image = Image.open(image_path)
+    image = np.array(image)
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+        ]
+    )
+    image = transform(image).unsqueeze(0)
+    return image
+
+
 def main():
     args = Options().parse()
 
@@ -360,15 +373,7 @@ def main():
     model.net.init_after_loading()
 
     img_path = 'inputs/cat1.jpeg'
-    image = Image.open(img_path)
-    image = np.array(image)
-    transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-        ]
-    )
-    image = transform(image).unsqueeze(0)
+    image = load_image(img_path)
 
     args.label_src = 'plant,grass,cat,stone,other'
 
