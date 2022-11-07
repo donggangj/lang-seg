@@ -204,12 +204,15 @@ class LSeg(BaseModel):
 
         self.text = clip.tokenize(self.labels)
 
+    def init_text_encoder(self, to_cuda=True):
+        if to_cuda:
+            self.text_encoder = torch.jit.trace(TextEncoder(self.clip_pretrained), self.text.cuda())
+        else:
+            self.text_encoder = torch.jit.trace(TextEncoder(self.clip_pretrained).cpu(), self.text.cpu())
+
     def init_after_loading(self):
         self.init_act_postprocessing()
-        self.text_encoder = torch.jit.trace(TextEncoder(self.clip_pretrained), self.text.cuda())
-        clip_pretrained = self.clip_pretrained
-        self.clip_pretrained = None
-        del clip_pretrained
+        self.init_text_encoder(to_cuda=True)
 
     def init_act_postprocessing(self):
         act_postprocessing = (self.pretrained.act_postprocess1[:2],
