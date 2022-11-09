@@ -293,12 +293,12 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
     sess = onnxruntime.InferenceSession(onnx_path, providers=['CUDAExecutionProvider'])
     x = {_in.name: to_numpy(_t) for _in, _t in zip(sess.get_inputs(), (image, tokens))}
     pred = sess.run(None, x)
-    if ref:
+    if ref is not None:
         mae, rmse = calc_loss(pred[0], to_numpy(ref), loss_path)
         title = f'ONNX inference: MAE={mae:.3e}, RMSE={rmse:.3e}'
     else:
         title = ''
-    show_result(image, np.max(pred[0], 1)[1], labels, alpha, save_path, title)
+    show_result(image, np.argmax(pred[0], 1), labels, alpha, save_path, title)
     return pred
 
 
