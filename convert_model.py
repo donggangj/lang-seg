@@ -407,7 +407,7 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
                        (image.cuda(), clip.tokenize(labels).cuda()),
                        onnx_path,
                        export_params=True,
-                       opset_version=16,
+                       opset_version=17,
                        do_constant_folding=True,
                        input_names=['image',
                                     'label_tokens'],
