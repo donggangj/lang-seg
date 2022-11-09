@@ -289,19 +289,28 @@ def calc_loss(pred: ndarray, ref: ndarray, loss_path: Optional[str] = ''):
 
 def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
               alpha=0.5, save_path='./tmp_onnx.jpg',
-              ref: Optional[torch.Tensor] = None, loss_path: Optional[str] = ''):
+              device='cpu', ref: Optional[torch.Tensor] = None,
+              loss_path: Optional[str] = ''):
+    if device not in ['cpu', 'gpu']:
+        device = 'cpu'
     import onnxruntime
 
     def to_numpy(tensor: torch.Tensor):
         return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
     tokens = clip.tokenize(labels)
-    sess = onnxruntime.InferenceSession(onnx_path, providers=['CUDAExecutionProvider'])
+    if device == 'cpu':
+        providers = ['CPUExecutionProvider']
+    elif device == 'cuda':
+        providers = ['CUDAExecutionProvider']
+    else:
+        raise RuntimeError(f'Invalid `device`: {device}')
+    sess = onnxruntime.InferenceSession(onnx_path, providers=providers)
     x = {_in.name: to_numpy(_t) for _in, _t in zip(sess.get_inputs(), (image, tokens))}
     pred = sess.run(None, x)
     if ref is not None:
         mae, rmse = calc_loss(pred[0], to_numpy(ref), loss_path)
-        title = f'ONNX inference: MAE={mae:.3e}, RMSE={rmse:.3e}'
+        title = f'ONNX inference on {device}: MAE={mae:.3e}, RMSE={rmse:.3e}'
     else:
         title = ''
     show_result(image, np.argmax(pred[0], 1), labels, alpha, save_path, title)
