@@ -442,8 +442,14 @@ def main():
     torch_out = inference(image_path=image_path, label=label, alpha=alpha,
                           to_onnx=True, rewrite_onnx=False, onnx_path=onnx_path)
     print(f'Testing ONNX......')
+    device = 'cpu'
+    fig_path = f'./tmp_onnx_{device}.jpg'
     test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
-              save_path='./tmp_onnx.jpg', ref=torch_out[0], loss_path='compare_onnx_with_torch.txt')
+              save_path=fig_path, ref=torch_out[0], device=device, loss_path=f'compare_onnx_{device}_with_torch.txt')
+    device = 'cuda'
+    fig_path = f'./tmp_onnx_{device}.jpg'
+    test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
+              save_path=fig_path, ref=torch_out[0], device=device, loss_path=f'compare_onnx_{device}_with_torch.txt')
     print(f'Finished testing')
 
 
