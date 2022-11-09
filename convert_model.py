@@ -291,7 +291,7 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
               alpha=0.5, save_path='./tmp_onnx.jpg',
               device='cpu', ref: Optional[torch.Tensor] = None,
               loss_path: Optional[str] = ''):
-    if device not in ['cpu', 'gpu']:
+    if device not in ['cpu', 'cuda']:
         device = 'cpu'
     import onnxruntime
 
@@ -310,7 +310,7 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
     pred = sess.run(None, x)
     if ref is not None:
         mae, rmse = calc_loss(pred[0], to_numpy(ref), loss_path)
-        title = f'ONNX inference on {device}: MAE={mae:.3e}, RMSE={rmse:.3e}'
+        title = f'ONNX inference on {device.upper()}: MAE={mae:.3e}, RMSE={rmse:.3e}'
     else:
         title = ''
     show_result(image, np.argmax(pred[0], 1), labels, alpha, save_path, title)
