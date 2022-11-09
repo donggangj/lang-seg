@@ -393,7 +393,7 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
 
     predict = predicts[0]
 
-    show_result(image, predict, labels, alpha, './tmp.jpg', 'visualization of torch model inference')
+    show_result(image, predict, labels, alpha, './tmp.jpg', 'Baseline: Refactored torch model inference on CUDA')
     del evaluator, predict, predicts
 
     onnx_path: str = onnx_path or args.onnx_path
@@ -407,7 +407,7 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
             del model_alter
             onnx_out = scripted_model(image.cuda(), clip.tokenize(labels).cuda())
             mae, rmse = calc_loss(onnx_out.cpu().numpy(), outputs[0].cpu().numpy(), 'compare_script_with_torch.txt')
-            title = f'Scripted inference: MAE={mae:.3e}, RMSE={rmse:.3e}'
+            title = f'Scripted inference on CUDA: MAE={mae:.3e}, RMSE={rmse:.3e}'
             show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg', title)
             ex_to_onnx(scripted_model,
                        (image.cuda(), clip.tokenize(labels).cuda()),
