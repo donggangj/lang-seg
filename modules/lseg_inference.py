@@ -214,6 +214,9 @@ class LSegInference(LSegModuleInference):
         self.mean = norm_mean
         self.std = norm_std
 
+    def evaluate_random(self, image, label_set):
+        return self.net(image, label_set)
+
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = LSegModuleInference.add_model_specific_args(parent_parser)
