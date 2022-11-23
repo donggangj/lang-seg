@@ -458,10 +458,12 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
 def main():
     image_path = 'inputs/cat1.jpeg'
     label = 'plant,grass,cat,stone,other'
+    ref_data_path = './original_output.npz'
     alpha = 0.5
     onnx_path = './LANG-SEG.onnx'
     torch_out = inference(image_path=image_path, label=label, alpha=alpha,
-                          to_onnx=True, rewrite_onnx=False, onnx_path=onnx_path)
+                          to_onnx=True, rewrite_onnx=False, onnx_path=onnx_path,
+                          ref=load_ref_data(ref_data_path))
     print(f'Testing ONNX......')
     device = 'cpu'
     fig_path = f'./tmp_onnx_{device}.jpg'
