@@ -396,8 +396,11 @@ def main(web=False):
     if web:
         lseg_web_demo()
     else:
-        lseg_local_demo(image_path='inputs/cat1.jpeg',
-                        label='plant,grass,cat,stone,other')
+        test_inputs = {0: {'image_path': 'inputs/cat1.jpeg',
+                           'label': 'plant,grass,cat,stone,other'},
+                       1: {'image_path': 'inputs/ADE_val_00000001.jpg',
+                           'label': 'plant,grass,wall,house,sky'}}
+        lseg_local_demo(**test_inputs[1])
 
 
 if __name__ == '__main__':
