@@ -1,4 +1,5 @@
 import argparse
+from os.path import exists
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -321,6 +322,28 @@ def load_model():
     )
 
     return evaluator, transform
+
+
+def lseg_local_demo():
+    lseg_model, lseg_transform = load_model()
+    label = 'plant,grass,cat,stone,other'
+    alpha = 0.5
+    image_path = 'inputs/cat1.jpeg'
+    fig_path = 'original_result.jpg'
+    res_data_path = 'original_output.npz'
+    image = Image.open(image_path)
+    image = lseg_transform(np.array(image)).unsqueeze(0)
+    labels = label.split(',')
+    with torch.no_grad():
+        outputs = lseg_model.parallel_forward(image, labels)
+        predicts = [
+            torch.max(output, 1)[1].cpu().numpy()
+            for output in outputs
+        ]
+    show_result(image, predicts[0], labels, alpha,
+                fig_path, title='Original torch model inference on CUDA')
+    if not exists(res_data_path):
+        np.savez_compressed(res_data_path, output=outputs[0].cpu().numpy())
 
 
 def lseg_web_demo():
