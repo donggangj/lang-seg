@@ -341,8 +341,7 @@ def lseg_local_demo():
         ]
     show_result(image, predicts[0], labels, alpha,
                 fig_path, title='Original torch model inference on CUDA')
-    if not exists(res_data_path):
-        np.savez_compressed(res_data_path, output=outputs[0].cpu().numpy())
+    np.savez_compressed(res_data_path, output=outputs[0].cpu().numpy())
 
 
 def lseg_web_demo():
