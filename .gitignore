@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 checkpoints/
 logs/
+
+# Generated files
+outputs
