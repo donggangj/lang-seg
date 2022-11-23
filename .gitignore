@@ -129,3 +129,7 @@ dmypy.json
 .pyre/
 checkpoints/
 logs/
+
+# Outputs
+*.npz
+result.jpg
