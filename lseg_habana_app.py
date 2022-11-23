@@ -8,8 +8,14 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
-from additional_utils.models import LSeg_MultiEvalModule
+from additional_utils.models import LSeg_MultiEvalModule, LSeg_habana_MultiEvalModule
 from modules.lseg_inference import LSegInference
+# INTEL_CUSTOMIZATION
+import habana_frameworks.torch as htorch
+if htorch.hpu.is_available():
+    # Use hpu as device
+    device = torch.device('hpu')
+# END of INTEL_CUSTOMIZATION
 
 st.set_page_config(layout="wide")
 
@@ -240,7 +246,7 @@ def load_model():
     args.widehead = True
     args.dataset = 'ade20k'
     args.backbone = 'clip_vitl16_384'
-    args.weights = 'checkpoints/demo_e200.ckpt'
+    args.weights = 'checkpoints/demo_e200_fp32.ckpt'
     args.ignore_index = 255
 
     model = LSegInference.load_from_checkpoint(
@@ -279,9 +285,11 @@ def load_model():
 
     model.mean = [0.5, 0.5, 0.5]
     model.std = [0.5, 0.5, 0.5]
-    evaluator = LSeg_MultiEvalModule(
+    # INTEL_CUSTOMIZATION
+    evaluator = LSeg_habana_MultiEvalModule(
         model, scales=scales, flip=True
-    ).cuda()
+    ).to(device)
+    # END of INTEL_CUSTOMIZATION
     evaluator.eval()
 
     transform = transforms.Compose(
@@ -297,29 +305,36 @@ def load_model():
 
 def lseg_demo():
     lseg_model, lseg_transform = load_model()
-    uploaded_file = st.file_uploader("Choose an image...")
-    input_labels = st.text_input("Input labels", value="dog, grass, other")
+    # uploaded_file = st.file_uploader("Choose an image...")
+    uploaded_file = './inputs/cat1.jpeg'
+    input_labels = st.text_input("Input labels", value="plant,grass,cat,stone,other")
     st.write("The labels are", input_labels)
 
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
-        pimage = lseg_transform(np.array(image)).unsqueeze(0)
+        pimage = lseg_transform(np.array(image)).unsqueeze(0).to(device)
 
         labels = []
         for label in input_labels.split(","):
             labels.append(label.strip())
 
         with torch.no_grad():
-            outputs = lseg_model.parallel_forward(pimage, labels)
+            output = lseg_model.forward(pimage, labels)
+            output_cpu = output.cpu()
+            np.savez_compressed('output.npz', output=output_cpu)
 
             predicts = [
                 torch.max(output, 1)[1].cpu().numpy()
-                for output in outputs
+                for output in [output]
             ]
+
+        error = calculate_error('output.npz', 'original_output.npz')
+        title = 'Habana Gaudi HL-205 inference: MAE={MAE:.3e}, RMSE={RMSE:.3e}'.format(**error)
+        show_result(pimage, predicts[0], labels, save_path='result.jpg', title=title)
 
         image = pimage[0].permute(1, 2, 0)
         image = image * 0.5 + 0.5
-        image = Image.fromarray(np.uint8(255 * image)).convert("RGBA")
+        image = Image.fromarray(np.uint8(255 * image.cpu())).convert("RGBA")
 
         pred = predicts[0]
         new_palette = get_new_pallete(len(labels))
@@ -338,8 +353,54 @@ def lseg_demo():
 
         plt.tight_layout()
 
-        # st.image([image,seg], width=700, caption=["Input image", "Segmentation"])
+        st.image([image,seg], width=700, caption=["Input image", "Segmentation"])
         st.pyplot(fig)
+
+def calculate_error(output_path, ref_output_path):
+    def mae(ref, pred):
+        ref, pred = np.array(ref), np.array(pred)
+        return np.mean(np.abs(ref - pred))
+
+    def rmse(ref, pred):
+        ref, pred = np.array(ref), np.array(pred)
+        return np.sqrt(np.mean((ref-pred)**2))
+
+    error = {}
+    ref_output = np.load(ref_output_path)['output']
+    output = np.load(output_path)['output']
+
+    error['MAE'] = mae(ref_output, output)
+    error['RMSE'] = rmse(ref_output, output)
+
+    return error
+
+def show_result(image, predict, labels: list, save_path: str, title='', alpha=0.5):
+    # show results
+    image = image.cpu()
+    new_palette = get_new_pallete(len(labels))
+    mask, patches = get_new_mask_pallete(predict, new_palette, out_label_flag=True, labels=labels)
+    img = image[0].permute(1, 2, 0)
+    img = img * 0.5 + 0.5
+    img = Image.fromarray(np.uint8(255 * img)).convert("RGBA")
+    seg = mask.convert("RGBA")
+    out = Image.blend(img, seg, alpha)
+    fig = plt.figure(figsize=(19.2, 3.6))
+    axes = fig.subplots(1, 3)
+    axes[0].imshow(img)
+    axes[0].xaxis.set_ticks([])
+    axes[0].yaxis.set_ticks([])
+    axes[0].set_xlabel('Original')
+    axes[1].imshow(out)
+    axes[1].xaxis.set_ticks([])
+    axes[1].yaxis.set_ticks([])
+    axes[1].set_title(title)
+    axes[1].set_xlabel('Original + Predicted Mask')
+    axes[2].imshow(seg)
+    axes[2].xaxis.set_ticks([])
+    axes[2].yaxis.set_ticks([])
+    axes[2].set_xlabel('Predicted Mask')
+    axes[2].legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
+    fig.savefig(save_path)
 
 
 def main():
