@@ -161,7 +161,8 @@ class LSeg(BaseModel):
         if labelset == '':
             text = self.text
         else:
-            text = clip.tokenize(labelset)    
+            text = clip.tokenize(labelset)
+        text = text.to(x.device)
         
         if self.channels_last == True:
             x.contiguous(memory_format=torch.channels_last)
@@ -191,7 +192,9 @@ class LSeg(BaseModel):
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
         
-        logits_per_image = self.logit_scale * image_features.half() @ text_features.t()
+        # INTEL_CUSTOMIZATION
+        logits_per_image = self.logit_scale * image_features @ text_features.t()
+        # END of INTEL_CUSTOMIZATION
 
         out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0,3,1,2)
 
