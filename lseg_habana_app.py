@@ -52,6 +52,34 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
     return out_img, patches
 
 
+def show_result(image, predict, labels, alpha, save_path, title=''):
+    # show results
+    new_palette = get_new_pallete(len(labels))
+    mask, patches = get_new_mask_pallete(predict, new_palette, out_label_flag=True, labels=labels)
+    img = image[0].permute(1, 2, 0)
+    img = img * 0.5 + 0.5
+    img = Image.fromarray(np.uint8(255 * img)).convert("RGBA")
+    seg = mask.convert("RGBA")
+    out = Image.blend(img, seg, alpha)
+    fig = plt.figure(figsize=(19.2, 3.6))
+    axes = fig.subplots(1, 3)
+    axes[0].imshow(img)
+    axes[0].xaxis.set_ticks([])
+    axes[0].yaxis.set_ticks([])
+    axes[0].set_xlabel('Original')
+    axes[1].imshow(out)
+    axes[1].xaxis.set_ticks([])
+    axes[1].yaxis.set_ticks([])
+    axes[1].set_title(title)
+    axes[1].set_xlabel('Original + Predicted Mask')
+    axes[2].imshow(seg)
+    axes[2].xaxis.set_ticks([])
+    axes[2].yaxis.set_ticks([])
+    axes[2].set_xlabel('Predicted Mask')
+    axes[2].legend(handles=patches, loc='upper right', bbox_to_anchor=(1.5, 1), prop={'size': 20})
+    fig.savefig(save_path)
+
+
 @st.cache(allow_output_mutation=True)
 def load_model():
     class Options:
