@@ -343,7 +343,12 @@ def load_ref_data(data_path='original_result.npz'):
 
 
 def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alpha=0.5,
-              to_onnx=True, rewrite_onnx=False, onnx_path=''):
+              to_onnx=True, rewrite_onnx=False, onnx_path='', ref: ndarray = None):
+    """
+    Do inference and optionally export to ONNX.
+
+    `ref` (if given) is regarded as the output of Original Torch Model.
+    """
     args = Options().parse()
 
     torch.manual_seed(args.seed)
@@ -404,17 +409,21 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
     print('** Input label value: {} **'.format(label))
     labels = label.split(',')
 
-    with torch.no_grad():
-        # evaluator.forward(image, labels) #parallel_forward
-        outputs = [evaluator(image.cuda(), clip.tokenize(labels).cuda())]
-        predicts = [
-            torch.max(output, 1)[1].cpu().numpy()
-            for output in outputs
-        ]
+    if ref is None:
+        with torch.no_grad():
+            outputs = [evaluator(image.cuda(), clip.tokenize(labels).cuda())]
+        title = 'Baseline: Refactored torch model inference on CUDA'
+    else:
+        outputs = [torch.tensor(ref)]
+        title = 'Baseline: Original torch model inference on CUDA'
+    predicts = [
+        torch.max(output, 1)[1].cpu().numpy()
+        for output in outputs
+    ]
 
     predict = predicts[0]
 
-    show_result(image, predict, labels, alpha, './tmp.jpg', 'Baseline: Refactored torch model inference on CUDA')
+    show_result(image, predict, labels, alpha, './tmp.jpg', title)
     del evaluator, predict, predicts
 
     onnx_path: str = onnx_path or args.onnx_path
