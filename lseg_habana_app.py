@@ -1,5 +1,5 @@
 import argparse
-from os.path import exists
+import os
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -323,13 +323,14 @@ def load_model():
     return evaluator, transform
 
 
-def lseg_local_demo():
+def lseg_local_demo(image_path='inputs/cat1.jpeg',
+                    label='plant,grass,cat,stone,other',
+                    save_dir='./outputs'):
     lseg_model, lseg_transform = load_model()
-    label = 'plant,grass,cat,stone,other'
     alpha = 0.5
-    image_path = 'inputs/cat1.jpeg'
-    fig_path = 'original_result.jpg'
-    res_data_path = 'original_output.npz'
+    basename = os.path.basename(image_path).rsplit('.', 1)[0]
+    fig_path = os.path.join(save_dir, f'original_result_{basename}.jpg')
+    res_data_path = os.path.join(save_dir, f'original_output_{basename}.npz')
     image = Image.open(image_path)
     image = lseg_transform(np.array(image)).unsqueeze(0)
     labels = label.split(',')
@@ -395,7 +396,8 @@ def main(web=False):
     if web:
         lseg_web_demo()
     else:
-        lseg_local_demo()
+        lseg_local_demo(image_path='inputs/cat1.jpeg',
+                        label='plant,grass,cat,stone,other')
 
 
 if __name__ == '__main__':
