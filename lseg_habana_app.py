@@ -317,7 +317,6 @@ def load_model():
         [
             transforms.ToTensor(),
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-            transforms.Resize([360, 480]),
         ]
     )
 
