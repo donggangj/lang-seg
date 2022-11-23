@@ -451,7 +451,7 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
                        dynamic_axes={'image': {2: 'image_h', 3: 'image_w'},
                                      'label_tokens': {0: 'n_tokens'},
                                      'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}},
-                       verbose=True)
+                       verbose=False)
     return outputs
 
 
