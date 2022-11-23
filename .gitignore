@@ -137,3 +137,6 @@ ADEChallengeData2016
 .idea
 .vscode
 
+
+# Generated files
+outputs
