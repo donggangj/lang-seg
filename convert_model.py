@@ -330,6 +330,18 @@ def load_image(image_path='inputs/cat1.jpeg'):
     return image
 
 
+def load_ref_data(data_path='original_result.npz'):
+    try:
+        f = np.load(data_path)
+        ref = f['output']
+    except KeyError:
+        f = np.load(data_path)
+        ref = f[list(f.keys())[0]]
+    except ValueError:
+        ref = np.array([])
+    return ref
+
+
 def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alpha=0.5,
               to_onnx=True, rewrite_onnx=False, onnx_path=''):
     args = Options().parse()
