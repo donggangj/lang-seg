@@ -295,10 +295,10 @@ def load_model():
     return evaluator, transform
 
 
-def lseg_demo():
+def lseg_web_demo():
     lseg_model, lseg_transform = load_model()
     uploaded_file = st.file_uploader("Choose an image...")
-    input_labels = st.text_input("Input labels", value="dog, grass, other")
+    input_labels = st.text_input("Input labels", value='plant,grass,cat,stone,other')
     st.write("The labels are", input_labels)
 
     if uploaded_file is not None:
@@ -343,7 +343,7 @@ def lseg_demo():
 
 
 def main():
-    lseg_demo()
+    lseg_web_demo()
 
 
 if __name__ == '__main__':
