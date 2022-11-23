@@ -391,9 +391,12 @@ def lseg_web_demo():
         st.pyplot(fig)
 
 
-def main():
-    lseg_web_demo()
+def main(web=False):
+    if web:
+        lseg_web_demo()
+    else:
+        lseg_local_demo()
 
 
 if __name__ == '__main__':
-    main()
+    main(web=False)
