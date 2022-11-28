@@ -1,6 +1,6 @@
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
-from os.path import exists
+import time
+from os.path import exists, join
 import argparse
 import numpy as np
 from numpy import ndarray
@@ -20,6 +20,10 @@ from torch.onnx import export as ex_to_onnx
 
 
 # torch.cuda.device_count()
+
+
+def get_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%S'):
+    return time.strftime(fmt)
 
 
 class Options:
@@ -343,7 +347,7 @@ def load_ref_data(data_path='original_result.npz'):
 
 
 def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alpha=0.5,
-              to_onnx=True, rewrite_onnx=False, onnx_path='', ref: ndarray = None):
+              to_onnx=True, rewrite_onnx=False, onnx_path='', ref: ndarray = None, out_dir='outputs'):
     """
     Do inference and optionally export to ONNX.
 
@@ -423,7 +427,8 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
 
     predict = predicts[0]
 
-    show_result(image, predict, labels, alpha, './tmp.jpg', title)
+    show_result(image, predict, labels, alpha,
+                join(out_dir, f'refactored_inference_{get_time_stamp()}.jpg'), title)
     del evaluator, predict, predicts
 
     onnx_path: str = onnx_path or args.onnx_path
@@ -436,9 +441,11 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
             scripted_model = torch.jit.script(model_alter)
             del model_alter
             onnx_out = scripted_model(image.cuda(), clip.tokenize(labels).cuda())
-            mae, rmse = calc_loss(onnx_out.cpu().numpy(), outputs[0].cpu().numpy(), 'compare_script_with_torch.txt')
+            mae, rmse = calc_loss(onnx_out.cpu().numpy(), outputs[0].cpu().numpy(),
+                                  join(out_dir, f'compare_script_with_torch_{get_time_stamp()}.txt'))
             title = f'Scripted inference on CUDA: MAE={mae:.3e}, RMSE={rmse:.3e}'
-            show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha, './tmp_script.jpg', title)
+            show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha,
+                        join(out_dir, f'scripted_inference_{get_time_stamp()}.jpg'), title)
             ex_to_onnx(scripted_model,
                        (image.cuda(), clip.tokenize(labels).cuda()),
                        onnx_path,
@@ -459,20 +466,23 @@ def main():
     image_path = 'inputs/cat1.jpeg'
     label = 'plant,grass,cat,stone,other'
     ref_data_path = './original_output.npz'
+    out_dir = './outputs'
     alpha = 0.5
     onnx_path = './LANG-SEG.onnx'
     torch_out = inference(image_path=image_path, label=label, alpha=alpha,
                           to_onnx=True, rewrite_onnx=False, onnx_path=onnx_path,
-                          ref=load_ref_data(ref_data_path))
+                          ref=load_ref_data(ref_data_path), out_dir=out_dir)
     print(f'Testing ONNX......')
     device = 'cpu'
-    fig_path = f'./tmp_onnx_{device}.jpg'
+    fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
     test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
-              save_path=fig_path, ref=torch_out[0], device=device, loss_path=f'compare_onnx_{device}_with_torch.txt')
+              save_path=fig_path, ref=torch_out[0], device=device,
+              loss_path=join(out_dir, f'compare_onnx_{device}_with_torch_{get_time_stamp()}.txt'))
     device = 'cuda'
-    fig_path = f'./tmp_onnx_{device}.jpg'
+    fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
     test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
-              save_path=fig_path, ref=torch_out[0], device=device, loss_path=f'compare_onnx_{device}_with_torch.txt')
+              save_path=fig_path, ref=torch_out[0], device=device,
+              loss_path=join(out_dir, f'compare_onnx_{device}_with_torch_{get_time_stamp()}.txt'))
     print(f'Finished testing')
 
 
