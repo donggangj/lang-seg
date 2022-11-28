@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -13,6 +14,10 @@ from additional_utils.models import LSeg_MultiEvalModule
 from modules.lseg_inference import LSegInference
 
 st.set_page_config(layout="wide")
+
+
+def get_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%S'):
+    return time.strftime(fmt)
 
 
 def get_new_pallete(num_cls):
@@ -325,17 +330,39 @@ def load_model():
 
 def lseg_local_demo(image_path='inputs/cat1.jpeg',
                     label='plant,grass,cat,stone,other',
-                    save_dir='./outputs'):
+                    save_dir='./outputs',
+                    n_repeat: int = -1):
     lseg_model, lseg_transform = load_model()
     alpha = 0.5
     basename = os.path.basename(image_path).rsplit('.', 1)[0]
-    fig_path = os.path.join(save_dir, f'original_result_{basename}.jpg')
-    res_data_path = os.path.join(save_dir, f'original_output_{basename}.npz')
+    fig_path = os.path.join(save_dir, f'original_result_{basename}_{get_time_stamp()}.jpg')
+    res_data_path = os.path.join(save_dir, f'original_output_{basename}_{get_time_stamp()}.npz')
     image = Image.open(image_path)
     image = lseg_transform(np.array(image)).unsqueeze(0)
     labels = label.split(',')
     with torch.no_grad():
-        outputs = lseg_model.parallel_forward(image, labels)
+        if n_repeat <= 0:
+            outputs = lseg_model.parallel_forward(image, labels)
+        else:
+            log_path = f'./logs/original_model_inference_time_{get_time_stamp()}.log'
+            t0 = time.time()
+            outputs = [lseg_model(image.cuda(), labels)]
+            t1 = time.time()
+            ts = [(t1 - t0) * 1000]
+            t0 = t1
+            for _ in range(n_repeat):
+                lseg_model(image.cuda(), labels)
+                t1 = time.time()
+                ts.append((t1 - t0) * 1000)
+                t0 = t1
+            with open(log_path, 'w') as f:
+                f.write(f'image_path: {image_path}\n'
+                        f'label: {label}\n'
+                        f'device: {torch.cuda.get_device_name()}\n'
+                        f'n_repeat: {n_repeat}\n'
+                        f'mean inference time (ms): {sum(ts[-n_repeat:]) / len(ts[-n_repeat:]):.3e}\n'
+                        f'starting time (ms): {ts[0]:.3e}\n'
+                        f'inference time (ms):\n{ts[-n_repeat:]}\n')
         predicts = [
             torch.max(output, 1)[1].cpu().numpy()
             for output in outputs
@@ -400,7 +427,7 @@ def main(web=False):
                            'label': 'plant,grass,cat,stone,other'},
                        1: {'image_path': 'inputs/ADE_val_00000001.jpg',
                            'label': 'plant,grass,wall,house,sky'}}
-        lseg_local_demo(**test_inputs[1])
+        lseg_local_demo(**test_inputs[0], n_repeat=10)
 
 
 if __name__ == '__main__':
