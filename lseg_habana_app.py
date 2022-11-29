@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+from typing import Callable
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -18,6 +19,19 @@ st.set_page_config(layout="wide")
 
 def get_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%S'):
     return time.strftime(fmt)
+
+
+def iterate_time(func: Callable, *x_in, n_repeat=10):
+    outputs = []
+    ts = []
+    t0 = time.time()
+    for _ in range(n_repeat):
+        output = func(*x_in)
+        outputs.append(output)
+        t1 = time.time()
+        ts.append((t1 - t0) * 1000)
+        t0 = t1
+    return ts, outputs
 
 
 def get_new_pallete(num_cls):
