@@ -305,10 +305,12 @@ def calc_loss(pred: ndarray, ref: ndarray, loss_path: Optional[str] = ''):
     return mae, rmse
 
 
-def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
+def test_onnx(onnx_path: str, image_path: str, label: str,
               alpha=0.5, save_path='./tmp_onnx.jpg',
               device='cpu', ref: Optional[torch.Tensor] = None,
-              loss_path: Optional[str] = ''):
+              loss_path: Optional[str] = '',
+              log_dir='logs',
+              n_repeat: int = -1):
     if device not in ['cpu', 'cuda']:
         device = 'cpu'
     import onnxruntime
@@ -316,6 +318,7 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
     def to_numpy(tensor: torch.Tensor):
         return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
+    labels = label.split(',')
     tokens = clip.tokenize(labels)
     if device == 'cpu':
         providers = ['CPUExecutionProvider']
@@ -324,13 +327,53 @@ def test_onnx(onnx_path: str, image: torch.Tensor, labels: List[str],
     else:
         raise RuntimeError(f'Invalid `device`: {device}')
     sess = onnxruntime.InferenceSession(onnx_path, providers=providers)
+    image = load_image(image_path)
     x = {_in.name: to_numpy(_t) for _in, _t in zip(sess.get_inputs(), (image, tokens))}
-    pred = sess.run(None, x)
-    if ref is not None:
-        mae, rmse = calc_loss(pred[0], to_numpy(ref), loss_path)
-        title = f'ONNX inference on {device.upper()}: MAE={mae:.3e}, RMSE={rmse:.3e}'
+    if n_repeat <= 0:
+        pred = sess.run(None, x)
+        if ref is not None:
+            mae, rmse = calc_loss(pred[0], to_numpy(ref), loss_path)
+            title = f'ONNX inference on {device.upper()}: MAE={mae:.3e}, RMSE={rmse:.3e}'
+        else:
+            title = ''
     else:
-        title = ''
+        ts, preds = iterate_time(sess.run, None, x, n_repeat=n_repeat + 1)
+        if ref is not None:
+            loss_list = [calc_loss(pred, to_numpy(ref)) for pred in preds]
+            loss = np.asarray(loss_list)
+            best_id = loss[:, 1].argmin()
+            pred = preds[best_id]
+            mae, rmse = loss_list[best_id]
+            title = f'ONNX inference on {device.upper()}: MAE={mae:.3e}, RMSE={rmse:.3e}'
+            extra_log = f'mean mae: {loss[:, 0].mean():g}\n' \
+                        f'mean rmse: {loss[:, 1].mean():g}\n' \
+                        f'(mae, rmse) list:\n{loss_list}\n'
+        else:
+            pred = preds[0]
+            title = ''
+            extra_log = ''
+        log_path = join(log_dir, f'onnx_inference_{device}_time_{get_time_stamp()}.log')
+        if device == 'cpu':
+            device_name = 'unknown'
+            with open('/proc/cpuinfo', 'r') as f:
+                lines = f.readlines()
+            for line in lines:
+                if 'model name' in line:
+                    device_name = line.split(':')[-1].strip()
+                    break
+        elif device == 'cuda':
+            device_name = torch.cuda.get_device_name()
+        else:
+            device_name = 'unknown'
+        with open(log_path, 'w') as f:
+            f.write(f'image_path: {image_path}\n'
+                    f'label: {label}\n'
+                    f'device: {device_name}\n'
+                    f'n_repeat: {n_repeat}\n'
+                    f'mean inference time (ms): {sum(ts[-n_repeat:]) / n_repeat:.3e}\n'
+                    f'starting time (ms): {ts[:-n_repeat]}\n'
+                    f'inference time (ms):\n{ts[-n_repeat:]}\n'
+                    f'{extra_log}')
     show_result(image, np.argmax(pred[0], 1), labels, alpha, save_path, title)
     return pred
 
@@ -522,14 +565,16 @@ def main():
     torch_out = [torch.tensor(load_ref_data(ref_data_path))]
     device = 'cpu'
     fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
-    test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
+    test_onnx(onnx_path, image_path=image_path, label=label, alpha=alpha,
               save_path=fig_path, ref=torch_out[0], device=device,
-              loss_path=join(out_dir, f'compare_onnx_{device}_with_torch_{get_time_stamp()}.txt'))
+              loss_path=join(out_dir, f'compare_onnx_{device}_with_torch_{get_time_stamp()}.txt'),
+              log_dir='logs', n_repeat=10)
     device = 'cuda'
     fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
-    test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
+    test_onnx(onnx_path, image_path=image_path, label=label, alpha=alpha,
               save_path=fig_path, ref=torch_out[0], device=device,
-              loss_path=join(out_dir, f'compare_onnx_{device}_with_torch_{get_time_stamp()}.txt'))
+              loss_path=join(out_dir, f'compare_onnx_{device}_with_torch_{get_time_stamp()}.txt'),
+              log_dir='logs', n_repeat=10)
     print(f'Finished testing')
 
 
