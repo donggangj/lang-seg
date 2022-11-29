@@ -63,8 +63,12 @@ class LSeg_MultiEvalModule(DataParallel):
         stride_rate = 2.0/3.0
         crop_size = self.crop_size
         stride = int(crop_size * stride_rate)
-        with torch.cuda.device_of(image):
-            scores = image.new().resize_(batch,self.nclass,h,w).zero_().cuda()
+        is_cuda = image.device != torch.device('cpu')
+        if is_cuda:
+            with torch.cuda.device_of(image):
+                scores = image.new().resize_(batch, self.nclass, h, w).zero_().cuda()
+        else:
+            scores = image.new().resize_(batch, self.nclass, h, w).zero_()
 
         for scale in self.scales:
             long_size = int(math.ceil(self.base_size * scale))
@@ -106,9 +110,13 @@ class LSeg_MultiEvalModule(DataParallel):
                 # grid forward and normalize
                 h_grids = int(math.ceil(1.0 * (ph-crop_size)/stride)) + 1
                 w_grids = int(math.ceil(1.0 * (pw-crop_size)/stride)) + 1
-                with torch.cuda.device_of(image):
-                    outputs = image.new().resize_(batch,self.nclass,ph,pw).zero_().cuda()
-                    count_norm = image.new().resize_(batch,1,ph,pw).zero_().cuda()
+                if is_cuda:
+                    with torch.cuda.device_of(image):
+                        outputs = image.new().resize_(batch, self.nclass, ph, pw).zero_().cuda()
+                        count_norm = image.new().resize_(batch, 1, ph, pw).zero_().cuda()
+                else:
+                    outputs = image.new().resize_(batch, self.nclass, ph, pw).zero_()
+                    count_norm = image.new().resize_(batch, 1, ph, pw).zero_()
                 # grid evaluation
                 for idh in range(h_grids):
                     for idw in range(w_grids):
