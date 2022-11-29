@@ -293,14 +293,15 @@ def calc_loss(pred: ndarray, ref: ndarray, loss_path: Optional[str] = ''):
     se_mat = ae_mat ** 2
     rse_mat = np.sqrt(se_mat)
     rmse = np.sqrt(se_mat.mean())
-    with open(loss_path or 'loss.txt', 'w') as f:
-        f.write(f'MAE={mae:g}\n'
-                f'AE mat:\n'
-                f'{ae_mat}\n'
-                f'\n'
-                f'RMSE={rmse:g}\n'
-                f'RSE mat:\n'
-                f'{rse_mat}\n')
+    if loss_path != '':
+        with open(loss_path, 'w') as f:
+            f.write(f'MAE={mae:g}\n'
+                    f'AE mat:\n'
+                    f'{ae_mat}\n'
+                    f'\n'
+                    f'RMSE={rmse:g}\n'
+                    f'RSE mat:\n'
+                    f'{rse_mat}\n')
     return mae, rmse
 
 
