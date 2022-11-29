@@ -367,6 +367,7 @@ def lseg_local_demo(image_path='inputs/cat1.jpeg',
             log_path = os.path.join(log_dir, f'original_model_inference_{repeat_device}_time_{get_time_stamp()}.log')
             device_name = 'unknown'
             if repeat_device == 'cpu':
+                lseg_model = lseg_model.float()
                 with open('/proc/cpuinfo', 'r') as f:
                     lines = f.readlines()
                 for line in lines:
