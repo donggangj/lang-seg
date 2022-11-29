@@ -4,7 +4,7 @@ from os.path import exists, join
 import argparse
 import numpy as np
 from numpy import ndarray
-from typing import Optional, List
+from typing import Optional, Callable
 
 import torch
 
@@ -24,6 +24,19 @@ from torch.onnx import export as ex_to_onnx
 
 def get_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%S'):
     return time.strftime(fmt)
+
+
+def iterate_time(func: Callable, *x_in, n_repeat=10):
+    outputs = []
+    ts = []
+    t0 = time.time()
+    for _ in range(n_repeat):
+        output = func(*x_in)
+        outputs.append(output)
+        t1 = time.time()
+        ts.append((t1 - t0) * 1000)
+        t0 = t1
+    return ts, outputs
 
 
 class Options:
