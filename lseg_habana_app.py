@@ -345,12 +345,16 @@ def load_model():
 def lseg_local_demo(image_path='inputs/cat1.jpeg',
                     label='plant,grass,cat,stone,other',
                     save_dir='./outputs',
-                    n_repeat: int = -1):
+                    log_dir='logs',
+                    n_repeat: int = -1,
+                    repeat_device='cuda'):
     lseg_model, lseg_transform = load_model()
     alpha = 0.5
     basename = os.path.basename(image_path).rsplit('.', 1)[0]
     fig_path = os.path.join(save_dir, f'original_result_{basename}_{get_time_stamp()}.jpg')
-    res_data_path = os.path.join(save_dir, f'original_output_{basename}_{get_time_stamp()}.npz')
+    res_data_path = os.path.join(save_dir,
+                                 f'original_output_'
+                                 f'{repeat_device if n_repeat > 0 else "cuda"}_{basename}_{get_time_stamp()}.npz')
     image = Image.open(image_path)
     image = lseg_transform(np.array(image)).unsqueeze(0)
     labels = label.split(',')
@@ -358,31 +362,36 @@ def lseg_local_demo(image_path='inputs/cat1.jpeg',
         if n_repeat <= 0:
             outputs = lseg_model.parallel_forward(image, labels)
         else:
-            log_path = f'./logs/original_model_inference_time_{get_time_stamp()}.log'
-            t0 = time.time()
-            outputs = [lseg_model(image.cuda(), labels)]
-            t1 = time.time()
-            ts = [(t1 - t0) * 1000]
-            t0 = t1
-            for _ in range(n_repeat):
-                lseg_model(image.cuda(), labels)
-                t1 = time.time()
-                ts.append((t1 - t0) * 1000)
-                t0 = t1
+            if repeat_device not in ['cpu', 'cuda']:
+                repeat_device = 'cuda'
+            log_path = os.path.join(log_dir, f'original_model_inference_{repeat_device}_time_{get_time_stamp()}.log')
+            device_name = 'unknown'
+            if repeat_device == 'cpu':
+                with open('/proc/cpuinfo', 'r') as f:
+                    lines = f.readlines()
+                for line in lines:
+                    if 'model name' in line:
+                        device_name = line.split(':')[-1].strip()
+                        break
+            elif repeat_device == 'cuda':
+                device_name = torch.cuda.get_device_name()
+            ts, outputs = iterate_time(lseg_model.to(repeat_device), image.to(repeat_device), labels,
+                                       n_repeat=n_repeat + 1)
             with open(log_path, 'w') as f:
                 f.write(f'image_path: {image_path}\n'
                         f'label: {label}\n'
-                        f'device: {torch.cuda.get_device_name()}\n'
+                        f'device: {device_name}\n'
                         f'n_repeat: {n_repeat}\n'
-                        f'mean inference time (ms): {sum(ts[-n_repeat:]) / len(ts[-n_repeat:]):.3e}\n'
-                        f'starting time (ms): {ts[0]:.3e}\n'
+                        f'mean inference time (ms): {sum(ts[-n_repeat:]) / n_repeat:.3e}\n'
+                        f'starting time (ms): {ts[:-n_repeat]}\n'
                         f'inference time (ms):\n{ts[-n_repeat:]}\n')
         predicts = [
             torch.max(output, 1)[1].cpu().numpy()
             for output in outputs
         ]
     show_result(image, predicts[0], labels, alpha,
-                fig_path, title='Original torch model inference on CUDA')
+                fig_path,
+                title=f'Original torch model inference on {repeat_device.upper() if n_repeat > 0 else "CUDA"}')
     np.savez_compressed(res_data_path, output=outputs[0].cpu().numpy())
 
 
@@ -441,7 +450,7 @@ def main(web=False):
                            'label': 'plant,grass,cat,stone,other'},
                        1: {'image_path': 'inputs/ADE_val_00000001.jpg',
                            'label': 'plant,grass,wall,house,sky'}}
-        lseg_local_demo(**test_inputs[0], n_repeat=10)
+        lseg_local_demo(**test_inputs[0], log_dir='logs', n_repeat=10, repeat_device='cuda')
 
 
 if __name__ == '__main__':
