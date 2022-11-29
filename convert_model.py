@@ -360,7 +360,8 @@ def load_ref_data(data_path='original_result.npz'):
 
 
 def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other', alpha=0.5,
-              to_onnx=True, rewrite_onnx=False, onnx_path='', ref: ndarray = None, out_dir='outputs'):
+              to_onnx=True, rewrite_onnx=False, onnx_path='', ref: ndarray = None,
+              out_dir='outputs', log_dir='logs', n_repeat: int = -1):
     """
     Do inference and optionally export to ONNX.
 
@@ -428,7 +429,21 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
 
     if ref is None:
         with torch.no_grad():
-            outputs = [evaluator(image.cuda(), clip.tokenize(labels).cuda())]
+            if n_repeat <= 0:
+                outputs = [evaluator(image.cuda(), clip.tokenize(labels).cuda())]
+            else:
+                x_in = (image.cuda(), clip.tokenize(labels).cuda())
+                log_path = join(log_dir, f'refactored_inference_time_{get_time_stamp()}.log')
+                ts, outputs = iterate_time(evaluator, *x_in, n_repeat=n_repeat + 1)
+                outputs = outputs[:1]
+                with open(log_path, 'w') as f:
+                    f.write(f'image_path: {image_path}\n'
+                            f'label: {label}\n'
+                            f'device: {torch.cuda.get_device_name()}\n'
+                            f'n_repeat: {n_repeat}\n'
+                            f'mean inference time (ms): {sum(ts[-n_repeat:]) / n_repeat:.3e}\n'
+                            f'starting time (ms): {ts[:-n_repeat]}\n'
+                            f'inference time (ms):\n{ts[-n_repeat:]}\n')
         title = 'Baseline: Refactored torch model inference on CUDA'
     else:
         outputs = [torch.tensor(ref)]
@@ -445,7 +460,8 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
     del evaluator, predict, predicts
 
     onnx_path: str = onnx_path or args.onnx_path
-    if to_onnx and (rewrite_onnx or not exists(onnx_path)):
+    to_onnx = to_onnx and (rewrite_onnx or not exists(onnx_path))
+    if to_onnx or n_repeat > 0:
         model_alter = LSegMultiEvalAlter(model, scales=scales, flip=True, n_class=len(model.net.labels),
                                          sample_input=(image.cuda(), clip.tokenize(labels).cuda())).cuda()
         model_alter.eval()
@@ -453,25 +469,40 @@ def inference(image_path='inputs/cat1.jpeg', label='plant,grass,cat,stone,other'
         with torch.no_grad():
             scripted_model = torch.jit.script(model_alter)
             del model_alter
-            onnx_out = scripted_model(image.cuda(), clip.tokenize(labels).cuda())
+            if n_repeat <= 0:
+                onnx_out = scripted_model(image.cuda(), clip.tokenize(labels).cuda())
+            else:
+                x_in = (image.cuda(), clip.tokenize(labels).cuda())
+                log_path = join(log_dir, f'scripted_inference_time_{get_time_stamp()}.log')
+                ts, scripted_outs = iterate_time(scripted_model, *x_in, n_repeat=n_repeat + 2)
+                onnx_out = scripted_outs[0]
+                with open(log_path, 'w') as f:
+                    f.write(f'image_path: {image_path}\n'
+                            f'label: {label}\n'
+                            f'device: {torch.cuda.get_device_name()}\n'
+                            f'n_repeat: {n_repeat}\n'
+                            f'mean inference time (ms): {sum(ts[-n_repeat:]) / n_repeat:.3e}\n'
+                            f'starting time (ms): {ts[:-n_repeat]}\n'
+                            f'inference time (ms):\n{ts[-n_repeat:]}\n')
             mae, rmse = calc_loss(onnx_out.cpu().numpy(), outputs[0].cpu().numpy(),
                                   join(out_dir, f'compare_script_with_torch_{get_time_stamp()}.txt'))
             title = f'Scripted inference on CUDA: MAE={mae:.3e}, RMSE={rmse:.3e}'
             show_result(image, torch.max(onnx_out, 1)[1].cpu().numpy(), labels, alpha,
                         join(out_dir, f'scripted_inference_{get_time_stamp()}.jpg'), title)
-            ex_to_onnx(scripted_model,
-                       (image.cuda(), clip.tokenize(labels).cuda()),
-                       onnx_path,
-                       export_params=True,
-                       opset_version=17,
-                       do_constant_folding=True,
-                       input_names=['image',
-                                    'label_tokens'],
-                       output_names=['label_map'],
-                       dynamic_axes={'image': {2: 'image_h', 3: 'image_w'},
-                                     'label_tokens': {0: 'n_tokens'},
-                                     'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}},
-                       verbose=False)
+            if to_onnx:
+                ex_to_onnx(scripted_model,
+                           (image.cuda(), clip.tokenize(labels).cuda()),
+                           onnx_path,
+                           export_params=True,
+                           opset_version=17,
+                           do_constant_folding=True,
+                           input_names=['image',
+                                        'label_tokens'],
+                           output_names=['label_map'],
+                           dynamic_axes={'image': {2: 'image_h', 3: 'image_w'},
+                                         'label_tokens': {0: 'n_tokens'},
+                                         'label_map': {1: 'n_tokens', 2: 'image_h', 3: 'image_w'}},
+                           verbose=False)
     return outputs
 
 
@@ -484,8 +515,10 @@ def main():
     onnx_path = './LANG-SEG.onnx'
     torch_out = inference(image_path=image_path, label=label, alpha=alpha,
                           to_onnx=True, rewrite_onnx=False, onnx_path=onnx_path,
-                          ref=load_ref_data(ref_data_path), out_dir=out_dir)
+                          # ref=load_ref_data(ref_data_path),
+                          out_dir=out_dir, log_dir='logs', n_repeat=10)
     print(f'Testing ONNX......')
+    torch_out = [torch.tensor(load_ref_data(ref_data_path))]
     device = 'cpu'
     fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
     test_onnx(onnx_path, image=load_image(image_path), labels=label.split(','), alpha=alpha,
