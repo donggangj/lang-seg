@@ -8,7 +8,8 @@ import torch
 from PIL import Image
 
 from additional_utils.models import LSeg_habana_MultiEvalModule
-from lseg_web_app.utils import Options, MD5Table, load_config, get_transform
+from lseg_web_app.utils import Options, MD5Table
+from lseg_web_app.utils import load_config, check_dir, get_transform
 from modules.lseg_inference import LSegInference
 
 if htorch.hpu.is_available():
@@ -368,6 +369,7 @@ def run_backend(opt):
 
 def main():
     opt = BackendOptions().parse()
+    check_dir(load_config(opt.config_path))
     run_backend(opt)
 
 

@@ -6,7 +6,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-from lseg_web_app.utils import Options, load_config, get_time_stamp, calc_error, show_result
+from lseg_web_app.utils import Options
+from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_error, show_result
 
 
 def check_update(config: dict):
@@ -61,6 +62,7 @@ def run_frontend(opt):
 
 def main():
     opt = Options().parse()
+    check_dir(load_config(opt.config_path))
     run_frontend(opt)
 
 
