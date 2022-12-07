@@ -1,4 +1,4 @@
-from os import remove, listdir
+from os import remove, listdir, environ
 from os.path import join, exists, basename
 from typing import Callable
 
@@ -14,6 +14,9 @@ from modules.lseg_inference import LSegInference
 if htorch.hpu.is_available():
     # Use hpu as device
     device = torch.device('hpu')
+    environ['PT_HPU_LAZY_MODE'] = '1'
+    environ['LOG_LEVEL_ALL'] = '0'
+    environ['PT_RECIPE_CACHE_PATH'] = './.cache'
 
 
 class BackendOptions(Options):
