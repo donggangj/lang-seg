@@ -130,6 +130,10 @@ dmypy.json
 checkpoints/
 logs/
 
+# Shared files
+.app/input_cache
+.app/output_cache
+
 # Outputs
 *.npz
 result.jpg
