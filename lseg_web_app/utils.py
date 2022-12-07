@@ -3,6 +3,7 @@ import hashlib
 import json
 import time
 from typing import Dict
+from os import makedirs
 from os.path import basename
 
 import matplotlib.patches as mpatches
@@ -74,6 +75,11 @@ class MD5Table:
         except Exception as err:
             print(err)
             return ''
+
+
+def check_dir(config: dict):
+    makedirs(config['input_dir'], exist_ok=True)
+    makedirs(config['output_dir'], exist_ok=True)
 
 
 def default_config():
