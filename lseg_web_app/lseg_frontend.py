@@ -64,7 +64,3 @@ def main():
     opt = Options().parse()
     check_dir(load_config(opt.config_path))
     run_frontend(opt)
-
-
-if __name__ == '__main__':
-    main()

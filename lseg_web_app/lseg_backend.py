@@ -371,7 +371,3 @@ def main():
     opt = BackendOptions().parse()
     check_dir(load_config(opt.config_path))
     run_backend(opt)
-
-
-if __name__ == '__main__':
-    main()
