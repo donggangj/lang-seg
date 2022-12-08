@@ -183,7 +183,7 @@ def show_result(res_path: str, config: Dict, save_path='', title='', alpha=0.5):
     output = res[config['output_key']]
     device_name = res[config['device_name_key']]
     title = title or f'{device_name} inference for input {basename(res_path).rsplit(".", 1)[0]}'
-    predict = np.max(output, 1)
+    predict = np.argmax(output, 1)
     new_palette = get_new_pallete(len(labels))
     mask, patches = get_new_mask_pallete(predict, new_palette, out_label_flag=True, labels=labels)
     img = image[0].permute(1, 2, 0)
