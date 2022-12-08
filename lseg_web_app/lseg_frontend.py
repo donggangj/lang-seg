@@ -46,14 +46,6 @@ def run_frontend(opt):
     if exists(test_output_path):
         st.write('Test result:')
         show_test_result(config)
-        res = listdir(out_dir)
-        res.remove(config['test_output_name'])
-        for res_name in res:
-            res_path = join(out_dir, res_name)
-            fig = show_result(res_path, config)
-            st.pyplot(fig)
-            remove(res_path)
-            sleep(1e-3)
         uploaded = st.file_uploader("Choose an image...")
         label = st.text_input("Input labels")
         if uploaded is not None and label != '':
@@ -64,6 +56,13 @@ def run_frontend(opt):
             with open(join(data_dir, name), 'w') as f:
                 f.write(f'{image_path}\n'
                         f'{label}\n')
+            res = listdir(out_dir)
+            res.remove(config['test_output_name'])
+            for res_name in res:
+                res_path = join(out_dir, res_name)
+                fig = show_result(res_path, config)
+                st.pyplot(fig)
+                remove(res_path)
     else:
         while True:
             check_update(config)
