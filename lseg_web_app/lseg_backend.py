@@ -340,7 +340,7 @@ def run_backend(opt):
     data_dir = config['input_dir']
     out_dir = config['output_dir']
     image_key = config['image_key']
-    labels_key = config['output_key']
+    labels_key = config['labels_key']
     output_key = config['output_key']
     device_name_key = config['device_name_key']
     device_name = get_device_name()
