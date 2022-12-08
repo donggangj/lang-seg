@@ -58,6 +58,9 @@ def run_frontend(opt):
             with open(join(data_dir, name), 'w') as f:
                 f.write(f'{image_path}\n'
                         f'{label}\n')
+    else:
+        while True:
+            check_update(config)
 
 
 def main():
