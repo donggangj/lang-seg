@@ -277,8 +277,9 @@ class MD5LSeg(MD5Table):
         """
         Update image map with duplicated old images removed and return unprocessed inputs
         """
-        names = sorted(listdir(self._data_dir),
-                       key=lambda s: ('.' in s, s.split('.')[0]), reverse=True)
+        paths = listdir(self._data_dir)
+        paths.remove(basename(self._path))
+        names = sorted(paths, key=lambda s: ('.' in s, s.split('.')[0]), reverse=True)
         new_image_paths = []
         new_input_paths = []
         for i, name in enumerate(names):
