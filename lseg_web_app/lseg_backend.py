@@ -315,16 +315,16 @@ def load_label(label_str: str):
 
 def get_device_name():
     device_name = 'unknown'
-    if device == 'cpu':
+    if device.type == 'cpu':
         with open('/proc/cpuinfo', 'r') as f:
             lines = f.readlines()
         for line in lines:
             if 'model name' in line:
                 device_name = line.split(':')[-1].strip()
                 break
-    elif device == 'cuda':
+    elif device.type == 'cuda':
         device_name = torch.cuda.get_device_name()
-    elif device == 'hpu':
+    elif device.type == 'hpu':
         device_name = torch.hpu.get_device_name()
     return device_name
 
