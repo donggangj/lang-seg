@@ -2,13 +2,14 @@ import argparse
 import hashlib
 import json
 import time
-from typing import Dict
 from os import makedirs
 from os.path import basename
+from typing import Dict
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
@@ -178,7 +179,7 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
 
 def show_result(res_path: str, config: Dict, save_path='', title='', alpha=0.5):
     res = np.load(res_path)
-    image = res[config['image_key']]
+    image = torch.tensor(res[config['image_key']])
     labels = res[config['labels_key']].tolist()
     output = res[config['output_key']]
     device_name = res[config['device_name_key']]
