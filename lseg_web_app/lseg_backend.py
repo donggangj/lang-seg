@@ -337,7 +337,6 @@ def run_backend(opt):
     transform = get_transform(config)
     image = load_image(config['test_image_path'], transform)
     labels = load_label(config['test_label'])
-    output = lseg_model(image, labels)
     data_dir = config['input_dir']
     out_dir = config['output_dir']
     image_key = config['image_key']
@@ -345,10 +344,12 @@ def run_backend(opt):
     output_key = config['output_key']
     device_name_key = config['device_name_key']
     device_name = get_device_name()
-    kwargs = {image_key: image.cpu(), labels_key: labels,
-              output_key: output.cpu(), device_name_key: device_name}
-    test_output_update_path = join(out_dir, config['test_output_update_name'])
-    np.savez_compressed(test_output_update_path, **kwargs)
+    with torch.no_grad():
+        output = lseg_model(image, labels)
+        kwargs = {image_key: image.cpu(), labels_key: labels,
+                  output_key: output.cpu(), device_name_key: device_name}
+        test_output_update_path = join(out_dir, config['test_output_update_name'])
+        np.savez_compressed(test_output_update_path, **kwargs)
 
     # Then keep processing until test output is removed
     test_output_path = join(out_dir, config['test_output_name'])
@@ -360,11 +361,12 @@ def run_backend(opt):
                 lines = f.readlines()
             image = load_image(lines[0].strip(), transform)
             labels = load_label(lines[1])
-            output = lseg_model(image, labels)
-            kwargs = {image_key: image.cpu(), labels_key: labels,
-                      output_key: output.cpu(), device_name_key: device_name}
-            np.savez_compressed(join(out_dir, basename(p)), **kwargs)
-            remove(p)
+            with torch.no_grad():
+                output = lseg_model(image, labels)
+                kwargs = {image_key: image.cpu(), labels_key: labels,
+                          output_key: output.cpu(), device_name_key: device_name}
+                np.savez_compressed(join(out_dir, basename(p)), **kwargs)
+                remove(p)
 
 
 def main():
