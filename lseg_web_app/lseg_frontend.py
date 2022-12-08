@@ -1,6 +1,7 @@
 from os import listdir, remove
 from os.path import join, exists
 from shutil import move
+from time import sleep
 
 import numpy as np
 import streamlit as st
@@ -16,6 +17,7 @@ def check_update(config: dict):
     if exists(test_output_update_path):
         test_output_path = join(out_dir, config['test_output_name'])
         move(test_output_update_path, test_output_path)
+        sleep(1e-3)
         st._rerun()
 
 
@@ -50,6 +52,7 @@ def run_frontend(opt):
             fig = show_result(res_path, config)
             st.pyplot(fig)
             remove(res_path)
+            sleep(1e-3)
         uploaded = st.file_uploader("Choose an image...")
         label = st.text_input("Input labels")
         if uploaded is not None and label != '':
