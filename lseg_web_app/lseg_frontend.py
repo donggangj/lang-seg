@@ -32,6 +32,7 @@ def show_test_result(config: dict):
 
 
 def run_frontend(opt):
+    st.set_page_config(layout="wide")
     config = load_config(opt.config_path)
     check_update(config)
 
