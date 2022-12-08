@@ -43,6 +43,7 @@ def run_frontend(opt):
         st.write('Test result:')
         show_test_result(config)
         res = listdir(out_dir)
+        res.remove(test_output_path)
         for res_name in res:
             res_path = join(out_dir, res_name)
             fig = show_result(res_path, config)
