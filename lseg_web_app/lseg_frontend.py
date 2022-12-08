@@ -17,7 +17,8 @@ def check_update(config: dict):
     if exists(test_output_update_path):
         test_output_path = join(out_dir, config['test_output_name'])
         move(test_output_update_path, test_output_path)
-        sleep(1e-3)
+        while exists(test_output_update_path):
+            continue
         st._rerun()
 
 
