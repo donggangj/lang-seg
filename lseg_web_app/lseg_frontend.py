@@ -1,8 +1,8 @@
 from os import listdir, remove
 from os.path import join, exists
 from shutil import move
-from time import sleep
 
+import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 from PIL import Image
@@ -34,6 +34,15 @@ def show_test_result(config: dict):
     st.pyplot(fig)
 
 
+def show_image(uploaded_image):
+    image = Image.open(uploaded_image)
+    fig = plt.figure()
+    plt.imshow(image)
+    plt.axis('off')
+    plt.title('Uploaded image')
+    st.pyplot(fig)
+
+
 def run_frontend(opt):
     st.set_page_config(layout="wide")
     config = load_config(opt.config_path)
@@ -47,6 +56,8 @@ def run_frontend(opt):
         st.write('Test result:')
         show_test_result(config)
         uploaded = st.file_uploader("Choose an image...")
+        if uploaded is not None:
+            show_image(uploaded)
         label = st.text_input("Input labels")
         if uploaded is not None and label != '':
             name = get_time_stamp()
