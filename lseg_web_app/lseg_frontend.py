@@ -1,6 +1,7 @@
 from os import listdir, remove
 from os.path import join, exists
 from shutil import move
+from time import sleep
 
 import numpy as np
 import streamlit as st
@@ -16,14 +17,13 @@ def check_update(config: dict):
     if exists(test_output_update_path):
         test_output_path = join(out_dir, config['test_output_name'])
         move(test_output_update_path, test_output_path)
-        while exists(test_output_update_path):
-            continue
         st.experimental_rerun()
 
 
 def show_test_result(config: dict):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
+    sleep(config['sleep_seconds_for_io'])
     res = np.load(test_output_path)
     mae, rmse = calc_error(res[config['output_key']],
                            np.load(config['test_ref_output'])[config['output_key']])
@@ -55,11 +55,16 @@ def run_frontend(opt):
             image = Image.open(uploaded)
             image_path = join(data_dir, f'{name}.jpg')
             image.save(image_path)
-            with open(join(data_dir, name), 'w') as f:
+            input_path = join(data_dir, name)
+            with open(input_path, 'w') as f:
                 f.write(f'{image_path}\n'
                         f'{label}\n')
-            res = listdir(out_dir)
-            res.remove(config['test_output_name'])
+            res = []
+            while exists(input_path):
+                res = listdir(out_dir)
+                res.remove(config['test_output_name'])
+                if len(res):
+                    sleep(config['sleep_seconds_for_io'])
             for res_name in res:
                 res_path = join(out_dir, res_name)
                 fig = show_result(res_path, config)
