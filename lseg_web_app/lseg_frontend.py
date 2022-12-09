@@ -2,7 +2,6 @@ from os import listdir, remove
 from os.path import join, exists
 from shutil import move
 
-import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 from PIL import Image
@@ -19,7 +18,7 @@ def check_update(config: dict):
         move(test_output_update_path, test_output_path)
         while exists(test_output_update_path):
             continue
-        st._rerun()
+        st.experimental_rerun()
 
 
 def show_test_result(config: dict):
@@ -31,15 +30,6 @@ def show_test_result(config: dict):
     device_name = res[config['device_name_key']]
     title = f'Test {device_name} inference: MAE={mae:g}, RMSE={rmse:g}'
     fig = show_result(test_output_path, config, title=title)
-    st.pyplot(fig)
-
-
-def show_image(uploaded_image):
-    image = Image.open(uploaded_image)
-    fig = plt.figure()
-    plt.imshow(image)
-    plt.axis('off')
-    plt.title('Uploaded image')
     st.pyplot(fig)
 
 
@@ -57,7 +47,8 @@ def run_frontend(opt):
         show_test_result(config)
         uploaded = st.file_uploader("Choose an image...")
         if uploaded is not None:
-            show_image(uploaded)
+            st.write('Uploaded image:')
+            st.image(uploaded)
         label = st.text_input("Input labels")
         if uploaded is not None and label != '':
             name = get_time_stamp()
