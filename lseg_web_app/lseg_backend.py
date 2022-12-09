@@ -1,5 +1,6 @@
 from os import remove, listdir, environ
 from os.path import join, exists, basename
+from time import sleep
 from typing import Callable
 
 import habana_frameworks.torch as htorch
@@ -357,6 +358,7 @@ def run_backend(opt):
     md5_map = MD5LSeg(join(data_dir, config['md5_name']), data_dir)
     while exists(test_output_path) or exists(test_output_update_path):
         input_paths = md5_map.get_latest()
+        sleep(config['sleep_seconds_for_io'])
         for p in input_paths:
             with open(p, 'r') as f:
                 lines = f.readlines()
