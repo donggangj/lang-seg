@@ -281,16 +281,14 @@ class MD5LSeg(MD5Table):
         md5_name = basename(self._path)
         if md5_name in paths:
             paths.remove(md5_name)
-        names = sorted(paths, key=lambda s: ('.' in s, s.split('.')[0]), reverse=True)
+        names = sorted(paths, key=lambda s: ('.' in s, s.split('.', 1)[0]), reverse=True)
         new_image_paths = []
         new_input_paths = []
         for i, name in enumerate(names):
-            if '.' in name:
-                if len(new_image_paths) == 0 and (
-                        self._last_image_t == '' or name.split('.', 1)[0] <= self._last_image_t):
-                    new_image_paths.extend([join(self._data_dir, s) for s in names[:i]])
+            if '.' in name and (self._last_image_t == '' or name.split('.', 1)[0] > self._last_image_t):
+                new_image_paths.append(join(self._data_dir, name))
             else:
-                if name > self._last_input_t:
+                if self._last_input_t == '' or name > self._last_input_t:
                     new_input_paths.append(join(self._data_dir, name))
                 else:
                     break
