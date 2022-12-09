@@ -261,7 +261,7 @@ class MD5LSeg(MD5Table):
         super().__init__(md5_table_path)
         self._data_dir = data_dir
         if len(self._md5):
-            self._last_image_t = max(basename(p) for p in self._md5.values())
+            self._last_image_t = max(basename(p).split('.', 1)[0] for p in self._md5.values())
         else:
             self._last_image_t = ''
         self._last_input_t = self._last_image_t
