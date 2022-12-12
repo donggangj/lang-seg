@@ -63,6 +63,8 @@ def run_frontend(opt):
             while exists(input_path):
                 res = listdir(out_dir)
                 res.remove(config['test_output_name'])
+                if config['test_output_update_name'] in res:
+                    res.remove(config['test_output_update_name'])
                 if len(res):
                     sleep(config['sleep_seconds_for_io'])
             for res_name in res:
@@ -70,6 +72,7 @@ def run_frontend(opt):
                 fig = show_result(res_path, config)
                 st.pyplot(fig)
                 remove(res_path)
+            check_update(config)
     else:
         while True:
             check_update(config)
