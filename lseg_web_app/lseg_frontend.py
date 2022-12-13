@@ -98,15 +98,18 @@ def run_frontend(opt):
                                       disabled=st.session_state['disable_interaction'])
         col1.write('Last uploaded image:')
         if uploaded is not None:
+            col1.write('Last uploaded image:')
             col1.image(uploaded)
         elif exists(st.session_state['last_image_path']):
+            col1.write('Last uploaded image:')
             col1.image(st.session_state['last_image_path'])
         label = col2.text_input("Input labels",
                                 disabled=st.session_state['disable_interaction'])
         col2.write(f'The labels are:\n{label}')
         if col2.button('Start processing',
                        disabled=st.session_state['disable_interaction']):
-            if feed_inputs(uploaded, label, data_dir):
+            if feed_inputs(uploaded or st.session_state['last_image_path'],
+                           label, data_dir):
                 st.session_state['disable_interaction'] = True
             else:
                 col2.write('Fail to start processing')
