@@ -115,8 +115,6 @@ def run_frontend(opt):
             st.experimental_rerun()
     else:
         st.write('Running initial testing...')
-    while True:
-        check_update(config)
 
 
 def main():
