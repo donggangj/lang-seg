@@ -16,7 +16,7 @@ def init_session_state():
         st.session_state['disable_interaction'] = False
     if 'has_result' not in st.session_state:
         st.session_state['has_result'] = False
-    if 'last_image' not in st.session_state:
+    if 'last_image_path' not in st.session_state:
         st.session_state['last_image_path'] = ''
 
 
