@@ -21,11 +21,11 @@ def check_update(config: dict):
     if exists(test_output_update_path):
         test_output_path = join(out_dir, config['test_output_name'])
         move(test_output_update_path, test_output_path)
+        sleep(config['sleep_seconds_for_io'])
         reset_session_state()
         st.experimental_rerun()
 
 
-@st.cache
 def show_test_result(config: dict):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
