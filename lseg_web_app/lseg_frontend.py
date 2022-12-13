@@ -11,6 +11,11 @@ from lseg_web_app.utils import Options
 from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_error, show_result
 
 
+def init_session_state():
+    if 'disable_interaction' not in st.session_state:
+        st.session_state['disable_interaction'] = False
+
+
 def reset_session_state():
     st.session_state['disable_interaction'] = False
 
@@ -117,5 +122,5 @@ def run_frontend(opt):
 def main():
     opt = Options().parse()
     check_dir(load_config(opt.config_path))
-    reset_session_state()
+    init_session_state()
     run_frontend(opt)
