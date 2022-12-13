@@ -14,10 +14,13 @@ from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_erro
 def init_session_state():
     if 'disable_interaction' not in st.session_state:
         st.session_state['disable_interaction'] = False
+    if 'has_result' not in st.session_state:
+        st.session_state['has_result'] = False
 
 
 def reset_session_state():
     st.session_state['disable_interaction'] = False
+    st.session_state['has_result'] = False
 
 
 def check_update(config: dict):
@@ -104,15 +107,21 @@ def run_frontend(opt):
                 col2.write('Fail to start processing')
             st.experimental_rerun()
         if st.session_state['disable_interaction'] is True:
+            st.session_state['has_result'] = True
             col2.write('Started processing...')
-            res = fetch_results(config)
-            for res_name in res:
-                res_path = join(out_dir, res_name)
-                fig = show_result(res_path, config)
-                st.pyplot(fig)
-                remove(res_path)
+            fetch_results(config)
             st.session_state['disable_interaction'] = False
             st.experimental_rerun()
+        if st.session_state['has_result']:
+            res = fetch_results(config)
+            st.session_state['has_result'] = False
+        else:
+            res = []
+        for res_name in res:
+            res_path = join(out_dir, res_name)
+            fig = show_result(res_path, config)
+            st.pyplot(fig)
+            remove(res_path)
     else:
         st.write('Running initial testing...')
 
