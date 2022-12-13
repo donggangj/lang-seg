@@ -96,11 +96,10 @@ def run_frontend(opt):
         col1, col2 = st.columns(2)
         uploaded = col1.file_uploader("Choose an image...",
                                       disabled=st.session_state['disable_interaction'])
-        col1.write('Last uploaded image:')
         if uploaded is not None:
             col1.write('Last uploaded image:')
             col1.image(uploaded)
-        elif exists(st.session_state['last_image_path']):
+        elif exists(st.session_state['last_image_path']) and not st.session_state['has_result']:
             col1.write('Last uploaded image:')
             col1.image(st.session_state['last_image_path'])
         label = col2.text_input("Input labels",
