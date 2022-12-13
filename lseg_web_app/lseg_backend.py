@@ -16,13 +16,6 @@ from lseg_web_app.utils import Options, MD5Table
 from lseg_web_app.utils import load_config, check_dir, get_transform
 from modules.lseg_inference import LSegInference
 
-if htorch.hpu.is_available():
-    # Use hpu as device
-    device = torch.device('hpu')
-    environ['PT_HPU_LAZY_MODE'] = '1'
-    environ['LOG_LEVEL_ALL'] = '0'
-    environ['PT_RECIPE_CACHE_PATH'] = './.cache'
-
 
 class BackendOptions(Options):
     def __init__(self):
@@ -253,7 +246,7 @@ def load_model(opt):
     # INTEL_CUSTOMIZATION
     evaluator = LSeg_habana_MultiEvalModule(
         model, scales=scales, flip=True
-    ).to(device)
+    )
     # END of INTEL_CUSTOMIZATION
     evaluator.eval()
 
@@ -310,7 +303,7 @@ class MD5LSeg(MD5Table):
         return new_input_paths
 
 
-def load_image(image_path: str, transform: Callable):
+def load_image(image_path: str, transform: Callable, device: torch.device):
     image = Image.open(image_path).convert('RGB')
     return transform(np.array(image)).unsqueeze(0).to(device)
 
@@ -319,7 +312,20 @@ def load_label(label_str: str):
     return [label.strip() for label in label_str.split(',')]
 
 
-def get_device_name():
+def set_torch_device(config: dict):
+    if config['device'] == 'hpu' and 'hpu' in torch.__dict__ and torch.hpu.is_available():
+        device = torch.device('hpu')
+        environ['PT_HPU_LAZY_MODE'] = str(config['hpu_mode'])
+        environ['LOG_LEVEL_ALL'] = '0'
+        environ['PT_RECIPE_CACHE_PATH'] = './.cache'
+        return device
+    if config['device'] == 'cuda' and 'cuda' in torch.__dict__ and torch.cuda.is_available():
+        device = torch.device('cuda')
+        return device
+    return torch.device('cpu')
+
+
+def get_physical_device_name(device: torch.device):
     device_name = 'unknown'
     if device.type == 'cpu':
         with open('/proc/cpuinfo', 'r') as f:
@@ -337,11 +343,12 @@ def get_device_name():
 
 def run_backend(opt):
     config = load_config(opt.config_path)
-    lseg_model = load_model(opt)
+    device = set_torch_device(config)
+    lseg_model = load_model(opt).to(device)
 
     # Firstly warmup with test input
     transform = get_transform(config)
-    image = load_image(config['test_image_path'], transform)
+    image = load_image(config['test_image_path'], transform, device)
     labels = load_label(config['test_label'])
     data_dir = config['input_dir']
     out_dir = config['output_dir']
@@ -349,7 +356,7 @@ def run_backend(opt):
     labels_key = config['labels_key']
     output_key = config['output_key']
     device_name_key = config['device_name_key']
-    device_name = get_device_name()
+    device_name = get_physical_device_name(device)
     with torch.no_grad():
         output = lseg_model(image, labels)
         kwargs = {image_key: image.cpu(), labels_key: labels,
@@ -366,7 +373,7 @@ def run_backend(opt):
         for p in input_paths:
             with open(p, 'r') as f:
                 lines = f.readlines()
-            image = load_image(lines[0].strip(), transform)
+            image = load_image(lines[0].strip(), transform, device)
             labels = load_label(lines[1])
             with torch.no_grad():
                 output = lseg_model(image, labels)
