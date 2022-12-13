@@ -17,5 +17,6 @@
         360,
         480
     ],
-    "device": "hpu"
+    "device": "hpu",
+    "hpu_mode": 1
 }

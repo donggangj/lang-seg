@@ -99,7 +99,8 @@ def default_config():
             'sleep_seconds_for_io': 0.3,
             'result_timeout_in_seconds': 60,
             'image_hw': [360, 480],
-            'device': 'hpu'}
+            'device': 'hpu',
+            'hpu_mode': 1}
 
 
 def load_config(path: str):
