@@ -97,6 +97,7 @@ def default_config():
             'output_key': 'output',
             'device_name_key': 'device_name',
             'sleep_seconds_for_io': 0.3,
+            'result_timeout_in_seconds': 60,
             'image_hw': [360, 480]}
 
 
