@@ -16,6 +16,8 @@ def init_session_state():
         st.session_state['disable_interaction'] = False
     if 'has_result' not in st.session_state:
         st.session_state['has_result'] = False
+    if 'last_image' not in st.session_state:
+        st.session_state['last_image_path'] = ''
 
 
 def reset_session_state():
@@ -53,6 +55,7 @@ def feed_inputs(image, label: str, data_dir: str):
         image = Image.open(image)
         image_path = join(data_dir, f'{time_stamp}.jpg')
         image.save(image_path)
+        st.session_state['last_image_path'] = image_path
         input_path = join(data_dir, time_stamp)
         with open(input_path, 'w') as f:
             f.write(f'{image_path}\n'
@@ -93,9 +96,11 @@ def run_frontend(opt):
         col1, col2 = st.columns(2)
         uploaded = col1.file_uploader("Choose an image...",
                                       disabled=st.session_state['disable_interaction'])
-        col1.write('Uploaded image:')
+        col1.write('Last uploaded image:')
         if uploaded is not None:
             col1.image(uploaded)
+        elif exists(st.session_state['last_image_path']):
+            col1.image(st.session_state['last_image_path'])
         label = col2.text_input("Input labels",
                                 disabled=st.session_state['disable_interaction'])
         col2.write(f'The labels are:\n{label}')
