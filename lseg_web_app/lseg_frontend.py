@@ -49,6 +49,8 @@ def feed_inputs(image, label: str, data_dir: str):
         with open(input_path, 'w') as f:
             f.write(f'{image_path}\n'
                     f'{label}\n')
+        return True
+    return False
 
 
 def fetch_results(config: dict):
@@ -70,31 +72,34 @@ def fetch_results(config: dict):
 
 def run_frontend(opt):
     st.set_page_config(layout="wide")
+    st.title('Language-guided Semantic Segmentation Web Demo')
     config = load_config(opt.config_path)
     check_update(config)
 
     data_dir = config['input_dir']
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
-    st.write('Testing...')
     if exists(test_output_path):
-        st.write('Test result:')
+        st.write('Initial test result:')
         show_test_result(config)
         col1, col2 = st.columns(2)
         uploaded = col1.file_uploader("Choose an image...",
                                       disabled=st.session_state['disable_interaction'])
+        col1.write('Uploaded image:')
         if uploaded is not None:
-            col1.image(uploaded, caption='Uploaded image:')
+            col1.image(uploaded)
         label = col2.text_input("Input labels",
                                 disabled=st.session_state['disable_interaction'])
-        if label != '':
-            col2.write(f'The labels are:\n{label}')
+        col2.write(f'The labels are:\n{label}')
         if col2.button('Start processing',
                        disabled=st.session_state['disable_interaction']):
-            feed_inputs(uploaded, label, data_dir)
-            st.session_state['disable_interaction'] = True
+            if feed_inputs(uploaded, label, data_dir):
+                st.session_state['disable_interaction'] = True
+            else:
+                col2.write('Fail to start processing')
             st.experimental_rerun()
-        if st.session_state['disable_interaction']:
+        if st.session_state['disable_interaction'] is True:
+            col2.write('Started processing...')
             res = fetch_results(config)
             for res_name in res:
                 res_path = join(out_dir, res_name)
@@ -103,6 +108,8 @@ def run_frontend(opt):
                 remove(res_path)
             st.session_state['disable_interaction'] = False
             st.experimental_rerun()
+    else:
+        st.write('Running initial testing...')
     while True:
         check_update(config)
 
