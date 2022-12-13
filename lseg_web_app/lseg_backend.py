@@ -3,7 +3,10 @@ from os.path import join, exists, basename
 from time import sleep
 from typing import Callable
 
-import habana_frameworks.torch as htorch
+try:
+    import habana_frameworks.torch as htorch
+except ImportError:
+    pass
 import numpy as np
 import torch
 from PIL import Image
