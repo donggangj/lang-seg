@@ -130,7 +130,9 @@ def run_frontend(opt):
             st.pyplot(fig)
             remove(res_path)
     else:
-        st.write('Running initial testing...')
+        st.write('Running initial test...')
+        while True:
+            check_update(config)
 
 
 def main():
