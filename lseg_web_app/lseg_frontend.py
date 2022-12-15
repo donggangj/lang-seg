@@ -53,7 +53,7 @@ def feed_inputs(image, label: str, data_dir: str):
     if image is not None and label != '':
         time_stamp = get_time_stamp()
         image = Image.open(image)
-        image_path = join(data_dir, f'{time_stamp}.jpg')
+        image_path = join(data_dir, f'{time_stamp}.png')
         image.save(image_path)
         st.session_state['last_image_path'] = image_path
         input_path = join(data_dir, time_stamp)
