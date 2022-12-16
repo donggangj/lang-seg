@@ -303,12 +303,12 @@ class MD5LSeg(MD5Table):
         return new_input_paths
 
 
-def load_image(image_path: str, transform: Callable, device: torch.device):
+def prepare_image(image_path: str, transform: Callable, device: torch.device):
     image = Image.open(image_path).convert('RGB')
     return transform(np.array(image)).unsqueeze(0).to(device)
 
 
-def load_label(label_str: str):
+def prepare_label(label_str: str):
     return [label.strip() for label in label_str.split(',')]
 
 
@@ -348,8 +348,8 @@ def run_backend(opt):
 
     # Firstly warmup with test input
     transform = get_transform(config)
-    image = load_image(config['test_image_path'], transform, device)
-    labels = load_label(config['test_label'])
+    image = prepare_image(config['test_image_path'], transform, device)
+    labels = prepare_label(config['test_label'])
     data_dir = config['input_dir']
     out_dir = config['output_dir']
     image_key = config['image_key']
@@ -373,8 +373,8 @@ def run_backend(opt):
         for p in input_paths:
             with open(p, 'r') as f:
                 lines = f.readlines()
-            image = load_image(lines[0].strip(), transform, device)
-            labels = load_label(lines[1])
+            image = prepare_image(lines[0].strip(), transform, device)
+            labels = prepare_label(lines[1])
             with torch.no_grad():
                 output = lseg_model(image, labels)
                 kwargs = {image_key: image.cpu(), labels_key: labels,
