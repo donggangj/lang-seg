@@ -51,7 +51,7 @@ class MD5Table:
     def save_md5_table(self):
         try:
             with open(self._path, 'w') as f:
-                json.dump(self._md5, f)
+                json.dump(self._md5, f, indent=4)
         except Exception as err:
             print(err)
 
