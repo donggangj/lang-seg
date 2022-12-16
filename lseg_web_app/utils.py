@@ -182,11 +182,11 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
 
 
 def show_result(res_path: str, config: Dict, save_path='', title='', alpha=0.5):
-    res = np.load(res_path)
-    image = torch.tensor(res[config['image_key']])
-    labels = res[config['labels_key']].tolist()
-    output = res[config['output_key']]
-    device_name = res[config['device_name_key']]
+    with np.load(res_path) as res:
+        image = torch.tensor(res[config['image_key']])
+        labels = res[config['labels_key']].tolist()
+        output = res[config['output_key']]
+        device_name = res[config['device_name_key']]
     title = title or f'{device_name} inference for input {basename(res_path).rsplit(".", 1)[0]}'
     predict = np.argmax(output, 1)
     new_palette = get_new_pallete(len(labels))

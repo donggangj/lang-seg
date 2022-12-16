@@ -40,10 +40,10 @@ def show_test_result(config: dict):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
     sleep(config['sleep_seconds_for_io'])
-    res = np.load(test_output_path)
-    mae, rmse = calc_error(res[config['output_key']],
-                           np.load(config['test_ref_output'])[config['output_key']])
-    device_name = res[config['device_name_key']]
+    with np.load(test_output_path) as res:
+        mae, rmse = calc_error(res[config['output_key']],
+                               np.load(config['test_ref_output'])[config['output_key']])
+        device_name = res[config['device_name_key']]
     title = f'Test {device_name} inference: MAE={mae:g}, RMSE={rmse:g}'
     fig = show_result(test_output_path, config, title=title)
     st.pyplot(fig)
