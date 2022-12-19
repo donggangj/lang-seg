@@ -14,17 +14,16 @@ from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_erro
 def init_session_state():
     if 'disable_interaction' not in st.session_state:
         st.session_state['disable_interaction'] = False
-    if 'has_result' not in st.session_state:
-        st.session_state['has_result'] = False
     if 'last_image_path' not in st.session_state:
         st.session_state['last_image_path'] = ''
     if 'last_time_stamp' not in st.session_state:
         st.session_state['last_time_stamp'] = ''
+    if 'last_result_path' not in st.session_state:
+        st.session_state['last_result_path'] = ''
 
 
 def reset_interaction_state():
     st.session_state['disable_interaction'] = False
-    st.session_state['has_result'] = False
 
 
 def check_backend_rerun(config: dict):
@@ -64,6 +63,25 @@ def feed_inputs(image, label: str, data_dir: str):
                     f'{label}\n')
         st.session_state['last_time_stamp'] = time_stamp
         return True
+    return False
+
+
+def update_result(config: dict):
+    target_name = st.session_state['last_time_stamp']
+    if target_name == '':
+        return False
+    init_t = time()
+    out_dir = config['output_dir']
+    timeout = config['result_timeout_in_seconds']
+    while timeout <= 0 or time() - init_t < timeout:
+        for file_name in listdir(out_dir):
+            if target_name == file_name.split('.', 1)[0]:
+                if exists(st.session_state['last_result_path']):
+                    remove(st.session_state['last_result_path'])
+                st.session_state['last_result_path'] = join(out_dir, target_name)
+                return True
+        if timeout <= 0:
+            check_backend_rerun(config)
     return False
 
 
@@ -117,21 +135,13 @@ def run_frontend(opt):
                 col2.write('Fail to start processing')
             st.experimental_rerun()
         if st.session_state['disable_interaction'] is True:
-            st.session_state['has_result'] = True
             col2.write('Started processing...')
-            fetch_results(config)
+            update_result(config)
             st.session_state['disable_interaction'] = False
             st.experimental_rerun()
-        if st.session_state['has_result']:
-            res = fetch_results(config)
-            st.session_state['has_result'] = False
-        else:
-            res = []
-        for res_name in res:
-            res_path = join(out_dir, res_name)
-            fig = show_result(res_path, config)
+        if st.session_state['last_result_path']:
+            fig = show_result(st.session_state['last_result_path'], config)
             st.pyplot(fig)
-            remove(res_path)
     else:
         st.write('Running initial test...')
         while True:
