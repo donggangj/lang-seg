@@ -28,6 +28,10 @@ def reset_interaction_state():
     st.session_state['disable_interaction'] = False
 
 
+def hide_test_result():
+    st.session_state['show_test_result'] = False
+
+
 def check_backend_rerun(config: dict):
     out_dir = config['output_dir']
     test_output_update_path = join(out_dir, config['test_output_update_name'])
@@ -121,9 +125,9 @@ def run_frontend(opt):
             show_test_result(config)
         col1, col2 = st.columns(2)
         uploaded = col1.file_uploader("Choose an image...",
+                                      on_change=hide_test_result,
                                       disabled=st.session_state['disable_interaction'])
         if uploaded is not None:
-            st.session_state['show_test_result'] = False
             col1.write('Last uploaded image:')
             col1.image(uploaded)
         elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
