@@ -112,7 +112,7 @@ def run_frontend(opt):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
-        if exists(st.session_state['last_result_path']):
+        if not exists(st.session_state['last_result_path']):
             st.write('Initial test result:')
             show_test_result(config)
         col1, col2 = st.columns(2)
@@ -121,7 +121,7 @@ def run_frontend(opt):
         if uploaded is not None:
             col1.write('Last uploaded image:')
             col1.image(uploaded)
-        elif exists(st.session_state['last_image_path']) and not st.session_state['has_result']:
+        elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
             col1.write('Last uploaded image:')
             col1.image(st.session_state['last_image_path'])
         label = col2.text_input("Input labels",
