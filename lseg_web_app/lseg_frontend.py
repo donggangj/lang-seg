@@ -18,6 +18,8 @@ def init_session_state():
         st.session_state['has_result'] = False
     if 'last_image_path' not in st.session_state:
         st.session_state['last_image_path'] = ''
+    if 'last_time_stamp' not in st.session_state:
+        st.session_state['last_time_stamp'] = ''
 
 
 def reset_session_state():
@@ -60,6 +62,7 @@ def feed_inputs(image, label: str, data_dir: str):
         with open(input_path, 'w') as f:
             f.write(f'{image_path}\n'
                     f'{label}\n')
+        st.session_state['last_time_stamp'] = time_stamp
         return True
     return False
 
