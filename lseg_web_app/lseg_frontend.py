@@ -88,8 +88,8 @@ def update_result(config: dict):
                     remove(st.session_state['last_result_path'])
                 st.session_state['last_result_path'] = join(out_dir, file_name)
                 st.session_state['show_test_result'] = False
-                sleep(config['sleep_seconds_for_io'])
                 progress_bar.progress(1.)
+                sleep(config['sleep_seconds_for_io'])
                 return True
         if timeout <= 0:
             check_backend_rerun(config)
