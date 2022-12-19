@@ -112,8 +112,9 @@ def run_frontend(opt):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
-        st.write('Initial test result:')
-        show_test_result(config)
+        if exists(st.session_state['last_result_path']):
+            st.write('Initial test result:')
+            show_test_result(config)
         col1, col2 = st.columns(2)
         uploaded = col1.file_uploader("Choose an image...",
                                       disabled=st.session_state['disable_interaction'])
