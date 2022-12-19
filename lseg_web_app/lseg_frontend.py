@@ -79,7 +79,9 @@ def update_result(config: dict):
     init_t = time()
     out_dir = config['output_dir']
     timeout = config['result_timeout_in_seconds']
+    progress_bar = st.progress(0.)
     while timeout <= 0 or time() - init_t < timeout:
+        progress_bar.progress(min(0.99, (time() - init_t) / timeout))
         for file_name in listdir(out_dir):
             if target_name == file_name.split('.', 1)[0]:
                 if exists(st.session_state['last_result_path']):
@@ -87,6 +89,7 @@ def update_result(config: dict):
                 st.session_state['last_result_path'] = join(out_dir, file_name)
                 st.session_state['show_test_result'] = False
                 sleep(config['sleep_seconds_for_io'])
+                progress_bar.progress(1.)
                 return True
         if timeout <= 0:
             check_backend_rerun(config)
