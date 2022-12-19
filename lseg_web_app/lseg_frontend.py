@@ -78,7 +78,7 @@ def update_result(config: dict):
             if target_name == file_name.split('.', 1)[0]:
                 if exists(st.session_state['last_result_path']):
                     remove(st.session_state['last_result_path'])
-                st.session_state['last_result_path'] = join(out_dir, target_name)
+                st.session_state['last_result_path'] = join(out_dir, file_name)
                 return True
         if timeout <= 0:
             check_backend_rerun(config)
