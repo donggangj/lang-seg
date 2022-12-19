@@ -124,7 +124,7 @@ def run_frontend(opt):
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
         if st.session_state['show_test_result']:
-            st.write('Initial test result:')
+            st.write(':green[Initial test result]:')
             show_test_result(config)
         col1, col2 = st.columns(2)
         uploaded = col1.file_uploader("Choose an image...",
@@ -138,17 +138,17 @@ def run_frontend(opt):
             col1.image(st.session_state['last_image_path'])
         label = col2.text_input("Input labels",
                                 disabled=st.session_state['disable_interaction'])
-        col2.write(f'The labels are:\n{label}')
+        col2.markdown(f'The labels are:\n**:blue[{label}]**')
         if col2.button('Start processing',
                        disabled=st.session_state['disable_interaction']):
             if feed_inputs(uploaded or st.session_state['last_image_path'],
                            label, data_dir):
                 st.session_state['disable_interaction'] = True
             else:
-                col2.write('Fail to start processing')
+                col2.markdown('**:red[Fail to start processing]**')
             st.experimental_rerun()
         if st.session_state['disable_interaction'] is True:
-            col2.write('Started processing...')
+            col2.markdown(':green[Started processing...]')
             update_result(config)
             st.session_state['disable_interaction'] = False
             st.experimental_rerun()
