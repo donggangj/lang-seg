@@ -33,7 +33,7 @@ def hide_test_result():
 
 
 def get_emoji(emoji_name: str, config: dict):
-    return f':{emoji_name}:' if config.get('render_emoji', False) else ''
+    return f' :{emoji_name}: ' if config.get('render_emoji', False) else ''
 
 
 def check_backend_rerun(config: dict):
@@ -140,9 +140,9 @@ def run_frontend(opt):
         elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
             col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
             col1.image(st.session_state['last_image_path'])
-        label = col2.text_input(f'Input labels{get_emoji("face_with_monocle", config)}',
+        label = col2.text_input(f'{get_emoji("face_with_monocle", config)}Input labels',
                                 disabled=st.session_state['disable_interaction'])
-        col2.markdown(f'{get_emoji("thinking_face", config)} The labels are:\n**:blue[{label}]**')
+        col2.markdown(f'{get_emoji("thinking_face", config)}The labels are:\n**:blue[{label}]**')
         if col2.button(f'{get_emoji("point_right", config)}**Start processing**',
                        disabled=st.session_state['disable_interaction']):
             if feed_inputs(uploaded or st.session_state['last_image_path'],
@@ -160,7 +160,7 @@ def run_frontend(opt):
             fig = show_result(st.session_state['last_result_path'], config)
             st.pyplot(fig)
     else:
-        st.markdown(f'{get_emoji("innocent", config)} :orange[Running initial test]...')
+        st.markdown(f'{get_emoji("innocent", config)}:orange[Running initial test]...')
         while True:
             check_backend_rerun(config)
 
