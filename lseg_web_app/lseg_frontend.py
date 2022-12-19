@@ -22,7 +22,7 @@ def init_session_state():
         st.session_state['last_time_stamp'] = ''
 
 
-def reset_session_state():
+def reset_interaction_state():
     st.session_state['disable_interaction'] = False
     st.session_state['has_result'] = False
 
@@ -34,7 +34,7 @@ def check_update(config: dict):
         test_output_path = join(out_dir, config['test_output_name'])
         move(test_output_update_path, test_output_path)
         sleep(config['sleep_seconds_for_io'])
-        reset_session_state()
+        reset_interaction_state()
         st.experimental_rerun()
 
 
