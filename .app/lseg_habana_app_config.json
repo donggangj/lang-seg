@@ -18,5 +18,6 @@
         480
     ],
     "device": "hpu",
-    "hpu_mode": 1
+    "hpu_mode": 1,
+    "render_emoji": false
 }

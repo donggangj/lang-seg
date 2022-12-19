@@ -100,7 +100,8 @@ def default_config():
             'result_timeout_in_seconds': 60,
             'image_hw': [360, 480],
             'device': 'hpu',
-            'hpu_mode': 1}
+            'hpu_mode': 1,
+            'render_emoji': False}
 
 
 def load_config(path: str):
