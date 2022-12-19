@@ -120,7 +120,7 @@ def fetch_results(config: dict):
 def run_frontend(opt):
     st.set_page_config(layout="wide")
     config = load_config(opt.config_path)
-    st.title(f'Language-guided Semantic Segmentation Web Demo{get_emoji("kissing_heart", config)}')
+    st.title(f'{get_emoji("kissing_heart", config)}Language-guided Semantic Segmentation Web Demo')
     check_backend_rerun(config)
 
     data_dir = config['input_dir']
@@ -128,17 +128,17 @@ def run_frontend(opt):
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
         if st.session_state['show_test_result']:
-            st.markdown(f':green[Initial test result]{get_emoji("hugging_face", config)}:')
+            st.markdown(f'{get_emoji("hugging_face", config)}:green[Initial test result]:')
             show_test_result(config)
         col1, col2 = st.columns(2)
-        uploaded = col1.file_uploader(f'Choose an image...{get_emoji("smirk", config)}',
+        uploaded = col1.file_uploader(f'{get_emoji("smirk", config)}Choose an image...',
                                       on_change=hide_test_result,
                                       disabled=st.session_state['disable_interaction'])
         if uploaded is not None:
-            col1.write('Last uploaded image:')
+            col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
             col1.image(uploaded)
         elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
-            col1.write('Last uploaded image:')
+            col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
             col1.image(st.session_state['last_image_path'])
         label = col2.text_input(f'Input labels{get_emoji("face_with_monocle", config)}',
                                 disabled=st.session_state['disable_interaction'])
@@ -149,10 +149,10 @@ def run_frontend(opt):
                            label, data_dir):
                 st.session_state['disable_interaction'] = True
             else:
-                col2.markdown(f'**:red[Fail to start processing]**{get_emoji("rage", config)}')
+                col2.markdown(f'{get_emoji("rage", config)}**:red[Fail to start processing]**')
             st.experimental_rerun()
         if st.session_state['disable_interaction'] is True:
-            col2.markdown(f':green[Started processing...]{get_emoji("zany_face", config)}')
+            col2.markdown(f'{get_emoji("zany_face", config)}:green[Started processing...]')
             update_result(config)
             st.session_state['disable_interaction'] = False
             st.experimental_rerun()
@@ -160,7 +160,7 @@ def run_frontend(opt):
             fig = show_result(st.session_state['last_result_path'], config)
             st.pyplot(fig)
     else:
-        st.write('Running initial test...')
+        st.markdown(f'{get_emoji("innocent", config)} :orange[Running initial test]...')
         while True:
             check_backend_rerun(config)
 
