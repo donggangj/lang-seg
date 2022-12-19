@@ -27,7 +27,7 @@ def reset_interaction_state():
     st.session_state['has_result'] = False
 
 
-def check_update(config: dict):
+def check_backend_rerun(config: dict):
     out_dir = config['output_dir']
     test_output_update_path = join(out_dir, config['test_output_update_name'])
     if exists(test_output_update_path):
@@ -80,7 +80,7 @@ def fetch_results(config: dict):
             sleep(config['sleep_seconds_for_io'])
             return res
         if timeout <= 0:
-            check_update(config)
+            check_backend_rerun(config)
     return []
 
 
@@ -88,7 +88,7 @@ def run_frontend(opt):
     st.set_page_config(layout="wide")
     st.title('Language-guided Semantic Segmentation Web Demo')
     config = load_config(opt.config_path)
-    check_update(config)
+    check_backend_rerun(config)
 
     data_dir = config['input_dir']
     out_dir = config['output_dir']
@@ -135,7 +135,7 @@ def run_frontend(opt):
     else:
         st.write('Running initial test...')
         while True:
-            check_update(config)
+            check_backend_rerun(config)
 
 
 def main():
