@@ -14,6 +14,8 @@ from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_erro
 def init_session_state():
     if 'disable_interaction' not in st.session_state:
         st.session_state['disable_interaction'] = False
+    if 'show_test_result' not in st.session_state:
+        st.session_state['show_test_result'] = True
     if 'last_image_path' not in st.session_state:
         st.session_state['last_image_path'] = ''
     if 'last_time_stamp' not in st.session_state:
@@ -79,6 +81,7 @@ def update_result(config: dict):
                 if exists(st.session_state['last_result_path']):
                     remove(st.session_state['last_result_path'])
                 st.session_state['last_result_path'] = join(out_dir, file_name)
+                st.session_state['show_test_result'] = False
                 sleep(config['sleep_seconds_for_io'])
                 return True
         if timeout <= 0:
@@ -113,13 +116,14 @@ def run_frontend(opt):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
-        if not exists(st.session_state['last_result_path']):
+        if st.session_state['show_test_result']:
             st.write('Initial test result:')
             show_test_result(config)
         col1, col2 = st.columns(2)
         uploaded = col1.file_uploader("Choose an image...",
                                       disabled=st.session_state['disable_interaction'])
         if uploaded is not None:
+            st.session_state['show_test_result'] = False
             col1.write('Last uploaded image:')
             col1.image(uploaded)
         elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
