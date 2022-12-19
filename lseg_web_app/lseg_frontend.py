@@ -79,6 +79,7 @@ def update_result(config: dict):
                 if exists(st.session_state['last_result_path']):
                     remove(st.session_state['last_result_path'])
                 st.session_state['last_result_path'] = join(out_dir, file_name)
+                sleep(config['sleep_seconds_for_io'])
                 return True
         if timeout <= 0:
             check_backend_rerun(config)
