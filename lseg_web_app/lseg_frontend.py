@@ -32,6 +32,10 @@ def hide_test_result():
     st.session_state['show_test_result'] = False
 
 
+def get_emoji(emoji_name: str, config: dict):
+    return f':{emoji_name}:' if config.get('render_emoji', False) else ''
+
+
 def check_backend_rerun(config: dict):
     out_dir = config['output_dir']
     test_output_update_path = join(out_dir, config['test_output_update_name'])
@@ -115,8 +119,8 @@ def fetch_results(config: dict):
 
 def run_frontend(opt):
     st.set_page_config(layout="wide")
-    st.title('Language-guided Semantic Segmentation Web Demo')
     config = load_config(opt.config_path)
+    st.title(f'Language-guided Semantic Segmentation Web Demo{get_emoji("kissing_heart", config)}')
     check_backend_rerun(config)
 
     data_dir = config['input_dir']
@@ -124,10 +128,10 @@ def run_frontend(opt):
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
         if st.session_state['show_test_result']:
-            st.write(':green[Initial test result]:')
+            st.markdown(f':green[Initial test result]{get_emoji("hugging_face", config)}:')
             show_test_result(config)
         col1, col2 = st.columns(2)
-        uploaded = col1.file_uploader("Choose an image...",
+        uploaded = col1.file_uploader(f'Choose an image...{get_emoji("smirk", config)}',
                                       on_change=hide_test_result,
                                       disabled=st.session_state['disable_interaction'])
         if uploaded is not None:
@@ -136,19 +140,19 @@ def run_frontend(opt):
         elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
             col1.write('Last uploaded image:')
             col1.image(st.session_state['last_image_path'])
-        label = col2.text_input("Input labels",
+        label = col2.text_input(f'Input labels{get_emoji("face_with_monocle", config)}',
                                 disabled=st.session_state['disable_interaction'])
-        col2.markdown(f'The labels are:\n**:blue[{label}]**')
-        if col2.button('Start processing',
+        col2.markdown(f'{get_emoji("thinking_face", config)} The labels are:\n**:blue[{label}]**')
+        if col2.button(f'{get_emoji("point_right", config)}**Start processing**',
                        disabled=st.session_state['disable_interaction']):
             if feed_inputs(uploaded or st.session_state['last_image_path'],
                            label, data_dir):
                 st.session_state['disable_interaction'] = True
             else:
-                col2.markdown('**:red[Fail to start processing]**')
+                col2.markdown(f'**:red[Fail to start processing]**{get_emoji("rage", config)}')
             st.experimental_rerun()
         if st.session_state['disable_interaction'] is True:
-            col2.markdown(':green[Started processing...]')
+            col2.markdown(f':green[Started processing...]{get_emoji("zany_face", config)}')
             update_result(config)
             st.session_state['disable_interaction'] = False
             st.experimental_rerun()
