@@ -2,6 +2,7 @@ from os import listdir, remove
 from os.path import join, exists
 from shutil import move
 from time import sleep, time
+from typing import List
 
 import numpy as np
 import streamlit as st
@@ -98,6 +99,32 @@ def update_result(config: dict):
         if timeout <= 0:
             check_backend_rerun(config)
     return False
+
+
+def parse_result(res_path: str, config: dict):
+    max_try = 3
+    for i in range(max_try):
+        try:
+            with np.load(res_path) as res:
+                image_array: np.ndarray = res[config['image_key']]
+                labels: List[str] = res[config['labels_key']].tolist()
+                output: np.ndarray = res[config['output_key']]
+                device_name: str = res[config['device_name_key']]
+        except Exception as err:
+            print(err)
+            if i < max_try - 1:
+                print(f'\nRetry {i + 1}/{max_try - 1}:')
+                sleep(config['sleep_seconds_for_io'])
+            else:
+                print(f'Failed to parse result {res_path}!')
+                image_array: np.ndarray = np.zeros((1, *config['image_hw'], 3))
+                labels: List[str] = []
+                output: np.ndarray = np.asarray([])
+                device_name: str = ''
+    image = Image.fromarray(
+        np.uint8((image_array.squeeze().transpose(1, 2, 0) * 0.5 + 0.5) * 255)
+    ).convert('RGBA')
+    return image, labels, output, device_name
 
 
 def fetch_results(config: dict):
