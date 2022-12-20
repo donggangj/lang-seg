@@ -3,6 +3,7 @@ from os.path import join, exists, basename, isdir
 from shutil import move
 from time import sleep, time
 from typing import List, Union
+from zipfile import ZipFile
 
 import numpy as np
 import streamlit as st
@@ -151,6 +152,17 @@ def save_mask_and_object_images(mask_and_object_images: List[Image.Image],
         image_paths.append(join(save_dir, f'{label_id}_{label}.png'))
         object_image.save(image_paths[-1])
     return image_paths
+
+
+def zip_and_save(zip_path: str, *content_paths):
+    try:
+        with ZipFile(zip_path, 'w') as zip_file:
+            for content_path in content_paths:
+                zip_file.write(content_path)
+        return True
+    except Exception as err:
+        print(err)
+        return False
 
 
 def fetch_results(config: dict):
