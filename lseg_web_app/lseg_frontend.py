@@ -126,6 +126,17 @@ def parse_result(res_path: str, config: dict):
     return image, labels, output, device_name
 
 
+def get_mask_and_object_images(image: Image, output: np.ndarray):
+    mask_array = np.uint8(np.argmax(output, 1).squeeze())
+    mask_image = Image.fromarray(mask_array)
+    mask_and_object_images = [mask_image]
+    mask_array = mask_array.reshape((*mask_array.shape, 1))
+    image = image.convert('RGBA')
+    for label_id in range(mask_array.max() + 1):
+        mask_and_object_images.append(Image.fromarray(image * (mask_array == label_id)))
+    return mask_and_object_images
+
+
 def fetch_results(config: dict):
     init_t = time()
     out_dir = config['output_dir']
