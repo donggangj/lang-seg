@@ -9,7 +9,7 @@ import streamlit as st
 from PIL import Image
 
 from lseg_web_app.utils import Options
-from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_error, show_result
+from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_error, get_result_figure
 
 
 def init_session_state():
@@ -56,7 +56,7 @@ def show_test_result(config: dict):
     mae, rmse = calc_error(output,
                            np.load(config['test_ref_output'])[config['output_key']])
     title = f'Test {device_name} inference: MAE={mae:g}, RMSE={rmse:g}'
-    fig = show_result(image, labels, output, title=title)
+    fig = get_result_figure(image, labels, output, title=title)
     st.pyplot(fig)
 
 
@@ -186,8 +186,8 @@ def run_frontend(opt):
             image, labels, output, device_name = parse_result(st.session_state['last_result_path'],
                                                               config)
             if output.size > 0:
-                fig = show_result(image, labels, output,
-                                  title=f'{device_name} inference for input'
+                fig = get_result_figure(image, labels, output,
+                                        title=f'{device_name} inference for input'
                                         f' {basename(st.session_state["last_result_path"]).rsplit(".", 1)[0]}')
                 st.pyplot(fig)
     else:
