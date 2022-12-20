@@ -2,7 +2,7 @@ from os import listdir, remove
 from os.path import join, exists, basename
 from shutil import move
 from time import sleep, time
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import streamlit as st
@@ -60,7 +60,7 @@ def show_test_result(config: dict):
     st.pyplot(fig)
 
 
-def feed_inputs(image, label: str, data_dir: str):
+def feed_inputs(image: Union[Image.Image, str], label: str, data_dir: str):
     if image is not None and label != '':
         time_stamp = get_time_stamp()
         image = Image.open(image)
@@ -126,7 +126,7 @@ def parse_result(res_path: str, config: dict):
     return image, labels, output, device_name
 
 
-def get_mask_and_object_images(image: Image, output: np.ndarray):
+def get_mask_and_object_images(image: Image.Image, output: np.ndarray):
     mask_array = np.uint8(np.argmax(output, 1).squeeze())
     mask_image = Image.fromarray(mask_array)
     mask_and_object_images = [mask_image]
