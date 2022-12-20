@@ -1,5 +1,5 @@
 from os import listdir, remove
-from os.path import join, exists, basename
+from os.path import join, exists, basename, isdir
 from shutil import move
 from time import sleep, time
 from typing import List, Union
@@ -135,6 +135,22 @@ def get_mask_and_object_images(image: Image.Image, output: np.ndarray):
     for label_id in range(mask_array.max() + 1):
         mask_and_object_images.append(Image.fromarray(image * (mask_array == label_id)))
     return mask_and_object_images
+
+
+def save_mask_and_object_images(mask_and_object_images: List[Image.Image],
+                                labels: List[str],
+                                save_dir: str):
+    image_paths: List[str] = []
+    if not isdir(save_dir) or len(mask_and_object_images) == 0:
+        return image_paths
+    mask_image = mask_and_object_images[0]
+    object_images = mask_and_object_images[1:]
+    image_paths.append(join(save_dir, 'mask.png'))
+    mask_image.save(image_paths[-1])
+    for label_id, (label, object_image) in enumerate(zip(labels, object_images)):
+        image_paths.append(join(save_dir, f'{label_id}_{label}.png'))
+        object_image.save(image_paths[-1])
+    return image_paths
 
 
 def fetch_results(config: dict):
