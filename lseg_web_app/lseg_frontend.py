@@ -251,8 +251,14 @@ def run_frontend(opt):
                 prepare_download_file(image, labels, output, config)
                 fig = get_result_figure(image, labels, output,
                                         title=f'{device_name} inference for input'
-                                        f' {basename(st.session_state["last_result_path"]).rsplit(".", 1)[0]}')
+                                              f' {basename(st.session_state["last_result_path"]).rsplit(".", 1)[0]}')
                 st.pyplot(fig)
+        if exists(st.session_state["last_download_path"]):
+            with open(st.session_state["last_download_path"], 'rb') as f:
+                col2.download_button(f'{get_emoji("heart_eyes", config)}**Download mask & object images**',
+                                     f,
+                                     basename(st.session_state["last_download_path"]),
+                                     mime='application/zip')
     else:
         st.markdown(f'{get_emoji("innocent", config)}:orange[Running initial test]...')
         while True:
