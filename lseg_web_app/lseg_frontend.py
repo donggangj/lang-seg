@@ -168,11 +168,14 @@ def zip_and_save(zip_path: str, *content_paths):
 
 
 def prepare_download_file(image: Image.Image, labels: List[str], output: np.ndarray, config: dict):
+    def remove_dir_and_files(dir_path: str):
+        for file_name in listdir(dir_path):
+            remove(join(dir_path, file_name))
+        removedirs(dir_path)
+
     if exists(st.session_state['last_download_path']):
         last_parsed_result_dir = dirname(st.session_state['last_download_path'])
-        for file_name in listdir(last_parsed_result_dir):
-            remove(join(last_parsed_result_dir, file_name))
-        removedirs(last_parsed_result_dir)
+        remove_dir_and_files(last_parsed_result_dir)
 
     parsed_result_dir = join(config['output_dir'], st.session_state['last_time_stamp'])
     makedirs(parsed_result_dir)
@@ -181,6 +184,8 @@ def prepare_download_file(image: Image.Image, labels: List[str], output: np.ndar
     zip_path = join(parsed_result_dir, f'{st.session_state["last_time_stamp"]}.zip')
     if zip_and_save(zip_path, *image_paths):
         st.session_state['last_download_path'] = zip_path
+    else:
+        remove_dir_and_files(parsed_result_dir)
 
 
 def fetch_results(config: dict):
