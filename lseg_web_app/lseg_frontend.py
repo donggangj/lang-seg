@@ -1,5 +1,5 @@
-from os import listdir, remove
-from os.path import join, exists, basename, isdir
+from os import listdir, remove, makedirs, removedirs
+from os.path import join, exists, basename, dirname, isdir
 from shutil import move
 from time import sleep, time
 from typing import List, Union
@@ -167,6 +167,22 @@ def zip_and_save(zip_path: str, *content_paths):
         return False
 
 
+def prepare_download_file(image: Image.Image, labels: List[str], output: np.ndarray, config: dict):
+    if exists(st.session_state['last_download_path']):
+        last_parsed_result_dir = dirname(st.session_state['last_download_path'])
+        for file_name in listdir(last_parsed_result_dir):
+            remove(join(last_parsed_result_dir, file_name))
+        removedirs(last_parsed_result_dir)
+
+    parsed_result_dir = join(config['output_dir'], st.session_state['last_time_stamp'])
+    makedirs(parsed_result_dir)
+    mask_and_object_images = get_mask_and_object_images(image, output)
+    image_paths = save_mask_and_object_images(mask_and_object_images, labels, parsed_result_dir)
+    zip_path = join(parsed_result_dir, f'{st.session_state["last_time_stamp"]}.zip')
+    if zip_and_save(zip_path, *image_paths):
+        st.session_state['last_download_path'] = zip_path
+
+
 def fetch_results(config: dict):
     init_t = time()
     out_dir = config['output_dir']
@@ -227,6 +243,7 @@ def run_frontend(opt):
             image, labels, output, device_name = parse_result(st.session_state['last_result_path'],
                                                               config)
             if output.size > 0:
+                prepare_download_file(image, labels, output, config)
                 fig = get_result_figure(image, labels, output,
                                         title=f'{device_name} inference for input'
                                         f' {basename(st.session_state["last_result_path"]).rsplit(".", 1)[0]}')
