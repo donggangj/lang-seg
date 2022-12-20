@@ -1,5 +1,5 @@
 from os import listdir, remove
-from os.path import join, exists
+from os.path import join, exists, basename
 from shutil import move
 from time import sleep, time
 from typing import List
@@ -51,13 +51,12 @@ def check_backend_rerun(config: dict):
 def show_test_result(config: dict):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
-    sleep(config['sleep_seconds_for_io'])
-    with np.load(test_output_path) as res:
-        mae, rmse = calc_error(res[config['output_key']],
-                               np.load(config['test_ref_output'])[config['output_key']])
-        device_name = res[config['device_name_key']]
+    image, labels, output, device_name = parse_result(test_output_path, config)
+    assert output.size > 0
+    mae, rmse = calc_error(output,
+                           np.load(config['test_ref_output'])[config['output_key']])
     title = f'Test {device_name} inference: MAE={mae:g}, RMSE={rmse:g}'
-    fig = show_result(test_output_path, config, title=title)
+    fig = show_result(image, labels, output, title=title)
     st.pyplot(fig)
 
 
@@ -184,8 +183,13 @@ def run_frontend(opt):
             st.session_state['disable_interaction'] = False
             st.experimental_rerun()
         if st.session_state['last_result_path']:
-            fig = show_result(st.session_state['last_result_path'], config)
-            st.pyplot(fig)
+            image, labels, output, device_name = parse_result(st.session_state['last_result_path'],
+                                                              config)
+            if output.size > 0:
+                fig = show_result(image, labels, output,
+                                  title=f'{device_name} inference for input'
+                                        f' {basename(st.session_state["last_result_path"]).rsplit(".", 1)[0]}')
+                st.pyplot(fig)
     else:
         st.markdown(f'{get_emoji("innocent", config)}:orange[Running initial test]...')
         while True:

@@ -3,13 +3,11 @@ import hashlib
 import json
 import time
 from os import makedirs
-from os.path import basename
-from typing import Dict
+from typing import Dict, List
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
@@ -182,24 +180,16 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
     return out_img, patches
 
 
-def show_result(res_path: str, config: Dict, save_path='', title='', alpha=0.5):
-    with np.load(res_path) as res:
-        image = torch.tensor(res[config['image_key']])
-        labels = res[config['labels_key']].tolist()
-        output = res[config['output_key']]
-        device_name = res[config['device_name_key']]
-    title = title or f'{device_name} inference for input {basename(res_path).rsplit(".", 1)[0]}'
+def show_result(image: Image, labels: List[str], output: np.ndarray,
+                save_path='', title='', alpha=0.5):
     predict = np.argmax(output, 1)
     new_palette = get_new_pallete(len(labels))
     mask, patches = get_new_mask_pallete(predict, new_palette, out_label_flag=True, labels=labels)
-    img = image[0].permute(1, 2, 0)
-    img = img * 0.5 + 0.5
-    img = Image.fromarray(np.uint8(255 * img)).convert("RGBA")
     seg = mask.convert("RGBA")
-    out = Image.blend(img, seg, alpha)
+    out = Image.blend(image, seg, alpha)
     fig = plt.figure(figsize=(19.2, 3.6))
     axes = fig.subplots(1, 3)
-    axes[0].imshow(img)
+    axes[0].imshow(image)
     axes[0].xaxis.set_ticks([])
     axes[0].yaxis.set_ticks([])
     axes[0].set_xlabel('Original')
