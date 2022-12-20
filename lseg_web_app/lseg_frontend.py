@@ -24,6 +24,8 @@ def init_session_state():
         st.session_state['last_time_stamp'] = ''
     if 'last_result_path' not in st.session_state:
         st.session_state['last_result_path'] = ''
+    if 'last_download_path' not in st.session_state:
+        st.session_state['last_download_path'] = ''
 
 
 def reset_interaction_state():
