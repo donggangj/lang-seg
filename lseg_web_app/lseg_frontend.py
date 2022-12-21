@@ -160,7 +160,7 @@ def zip_and_save(zip_path: str, *content_paths):
     try:
         with ZipFile(zip_path, 'w') as zip_file:
             for content_path in content_paths:
-                zip_file.write(content_path)
+                zip_file.write(content_path, basename(content_path))
         return True
     except Exception as err:
         print(err)
