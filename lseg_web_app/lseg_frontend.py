@@ -10,7 +10,7 @@ import streamlit as st
 from PIL import Image
 
 from lseg_web_app.utils import Options
-from lseg_web_app.utils import load_config, check_dir, get_time_stamp, calc_error, get_result_figure
+from lseg_web_app.utils import load_config, check_dir, get_utc_time_stamp, calc_error, get_result_figure
 
 
 def init_session_state():
@@ -65,7 +65,7 @@ def show_test_result(config: dict):
 
 def feed_inputs(image: Union[Image.Image, str], label: str, data_dir: str):
     if image is not None and label != '':
-        time_stamp = get_time_stamp()
+        time_stamp = get_utc_time_stamp()
         image = Image.open(image)
         image_path = join(data_dir, f'{time_stamp}.png')
         image.save(image_path)

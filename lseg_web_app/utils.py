@@ -130,8 +130,8 @@ def get_transform(config: Dict):
     )
 
 
-def get_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%S'):
-    return time.strftime(fmt)
+def get_utc_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%SZ'):
+    return time.strftime(fmt, time.gmtime())
 
 
 def calc_error(pred: np.ndarray, ref: np.ndarray):
