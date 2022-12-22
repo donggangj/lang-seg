@@ -179,8 +179,10 @@ def prepare_download_file(image: Image.Image, labels: List[str], output: np.ndar
 
     parsed_result_dir = join(config['output_dir'], st.session_state['last_time_stamp'])
     makedirs(parsed_result_dir)
+    image_paths = [join(parsed_result_dir, 'input_image.png')]
+    image.save(image_paths[-1])
     mask_and_object_images = get_mask_and_object_images(image, output)
-    image_paths = save_mask_and_object_images(mask_and_object_images, labels, parsed_result_dir)
+    image_paths.extend(save_mask_and_object_images(mask_and_object_images, labels, parsed_result_dir))
     zip_path = join(parsed_result_dir, f'{st.session_state["last_time_stamp"]}.zip')
     if zip_and_save(zip_path, *image_paths):
         st.session_state['last_download_path'] = zip_path
