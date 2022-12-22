@@ -231,7 +231,10 @@ def run_frontend(opt):
             col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
             col1.image(st.session_state['last_image_path'])
         label = col2.text_input(f'{get_emoji("face_with_monocle", config)}Input labels',
-                                disabled=st.session_state['disable_interaction'])
+                                disabled=st.session_state['disable_interaction'],
+                                help='Labels split by comma \",\" and '
+                                     'each label may consists of multiple space-separated words.\n'
+                                     'E.g., \"animal, plant, stone, sky, other\".')
         col2.markdown(f'{get_emoji("thinking_face", config)}The labels are:\n**:blue[{label}]**')
         if col2.button(f'{get_emoji("point_right", config)}**Start processing**',
                        disabled=st.session_state['disable_interaction']):
