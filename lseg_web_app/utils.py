@@ -121,13 +121,22 @@ def save_config(config: Dict, path: str):
 
 
 def get_transform(config: Dict):
-    return transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-            transforms.Resize(config.get('image_hw', default_config()['image_hw'])),
-        ]
-    )
+    resize_hw: List[int] = config.get('image_hw', default_config()['image_hw'])
+    if any(value <= 0 for value in resize_hw):
+        return transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+            ]
+        )
+    else:
+        return transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+                transforms.Resize(resize_hw),
+            ]
+        )
 
 
 def get_utc_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%SZ'):
