@@ -2,7 +2,7 @@
     "input_dir": ".app/input_cache",
     "output_dir": ".app/output_cache",
     "md5_name": "md5.json",
-    "test_image_path": "inputs/cat1.jpeg",
+    "test_image_path": "inputs/cat1.png",
     "test_label": "plant,grass,cat,stone,other",
     "test_ref_output": "original_output.npz",
     "test_output_update_name": "updated_test_output.npz",
