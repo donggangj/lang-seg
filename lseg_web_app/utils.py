@@ -180,7 +180,7 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
     return out_img, patches
 
 
-def get_result_figure(image: Image, labels: List[str], output: np.ndarray,
+def get_result_figure(image: Image.Image, labels: List[str], output: np.ndarray,
                       save_path='', title='', alpha=0.5):
     predict = np.argmax(output, 1)
     new_palette = get_new_pallete(len(labels))
