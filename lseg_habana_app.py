@@ -306,7 +306,7 @@ def load_model():
 def lseg_demo():
     lseg_model, lseg_transform = load_model()
     # uploaded_file = st.file_uploader("Choose an image...")
-    uploaded_file = './inputs/cat1.jpeg'
+    uploaded_file = 'samples/cat1.jpeg'
     input_labels = st.text_input("Input labels", value="plant,grass,cat,stone,other")
     st.write("The labels are", input_labels)
 
