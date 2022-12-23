@@ -63,6 +63,21 @@ def show_test_result(config: dict):
     st.pyplot(fig)
 
 
+def get_available_sample_paths(config: dict, sample_type=('png',)) -> List[str]:
+    sample_dir = config.get('sample_dir', dirname(config['test_image_path']))
+    sample_paths = []
+    if not isdir(sample_dir):
+        return sample_paths
+    if type(sample_type) == str:
+        sample_type = (sample_type,)
+    for name in listdir(sample_dir):
+        for t in sample_type:
+            if name.endswith(t):
+                sample_paths.append(join(sample_dir, name))
+                break
+    return sample_paths
+
+
 def feed_inputs(image: Union[Image.Image, str], label: str, data_dir: str):
     if image is not None and label != '':
         time_stamp = get_utc_time_stamp()
