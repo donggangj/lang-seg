@@ -237,8 +237,7 @@ def run_frontend(opt):
             show_test_result(config)
         col1, col2 = st.columns(2)
         col2.radio(f'{get_emoji("open_mouth", config)}Choose how to input image:',
-                   (f'{get_emoji("point_up_2", config)}Upload',
-                    f'{get_emoji("point_left", config)}Select from samples'),
+                   ('Upload', 'Select from samples'),
                    key='input_selection',
                    horizontal=True,
                    on_change=hide_result,
