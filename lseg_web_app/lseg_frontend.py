@@ -255,7 +255,7 @@ def run_frontend(opt):
                 col1.image(st.session_state['last_image_path'])
         else:
             sample_paths = get_available_sample_paths(config)
-            col1.image(get_preview_figure(sample_paths))
+            col1.pyplot(get_preview_figure(sample_paths))
             option = col1.selectbox(f'{get_emoji("wink", config)}'
                                     f'Select a sample image by index:',
                                     [str(i) for i in range(len(sample_paths))],
