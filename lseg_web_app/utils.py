@@ -216,3 +216,26 @@ def get_result_figure(image: Image.Image, labels: List[str], output: np.ndarray,
     if save_path != '':
         fig.savefig(save_path)
     return fig
+
+
+def get_preview_figure(image_paths: List[str]):
+    images = [Image.open(p) for p in image_paths]
+    max_per_row = 10
+    n_image = len(images)
+    n_col = min(n_image, max_per_row)
+    n_row = (n_image - 1) // n_col + 1
+    fig = plt.figure(figsize=(10, 10 * n_row / max_per_row))
+    axes = fig.subplots(n_row, n_col)
+    if n_row == 1 and n_col == 1:
+        axes = [[axes]]
+    elif n_row == 1:
+        axes = [axes]
+    for i in range(n_row):
+        for j in range(n_col):
+            ax = axes[i][j]
+            image_idx = i * n_col + j
+            ax.imshow(images[image_idx])
+            ax.xaxis.set_ticks([])
+            ax.yaxis.set_ticks([])
+            ax.set_xlabel(f'{image_idx}')
+    return fig
