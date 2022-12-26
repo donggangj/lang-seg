@@ -9,8 +9,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-from lseg_web_app.utils import Options
-from lseg_web_app.utils import load_config, check_dir, get_utc_time_stamp, calc_error, get_result_figure
+from lseg_web_app.utils import (Options, load_config, check_dir, get_utc_time_stamp, calc_error,
+                                get_result_figure, get_preview_figure)
 
 
 def init_session_state():
@@ -236,15 +236,35 @@ def run_frontend(opt):
             st.markdown(f'{get_emoji("hugging_face", config)}:green[Initial test result]:')
             show_test_result(config)
         col1, col2 = st.columns(2)
-        uploaded = col1.file_uploader(f'{get_emoji("smirk", config)}Choose an image...',
-                                      on_change=hide_result,
-                                      disabled=st.session_state['disable_interaction'])
-        if uploaded is not None:
-            col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
-            col1.image(uploaded)
-        elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
-            col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
-            col1.image(st.session_state['last_image_path'])
+        col2.radio(f'{get_emoji("open_mouth", config)}Choose how to input image:',
+                   (f'{get_emoji("point_up_2", config)}Upload',
+                    f'{get_emoji("point_left", config)}Select from samples'),
+                   key='input_selection',
+                   horizontal=True,
+                   on_change=hide_result,
+                   disabled=st.session_state['disable_interaction'])
+        if st.session_state['input_selection'] == 'Upload':
+            uploaded = col1.file_uploader(f'{get_emoji("smirk", config)}Choose an image...',
+                                          on_change=hide_result,
+                                          disabled=st.session_state['disable_interaction'])
+            if uploaded is not None:
+                col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
+                col1.image(uploaded)
+            elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
+                col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
+                col1.image(st.session_state['last_image_path'])
+        else:
+            sample_paths = get_available_sample_paths(config)
+            col1.image(get_preview_figure(sample_paths))
+            option = col1.selectbox(f'{get_emoji("wink", config)}'
+                                    f'Select a sample image by index:',
+                                    [str(i) for i in range(len(sample_paths))],
+                                    on_change=hide_result,
+                                    disabled=st.session_state['disable_interaction'])
+            uploaded = sample_paths[int(option)]
+            if not st.session_state['show_result']:
+                col1.write(f'{get_emoji("sunglasses", config)}Last selected sample image:')
+                col1.image(uploaded)
         label = col2.text_input(f'{get_emoji("face_with_monocle", config)}Input labels',
                                 disabled=st.session_state['disable_interaction'],
                                 help='Labels split by comma \",\" and '
