@@ -309,7 +309,10 @@ def prepare_image(image_path: str, transform: Callable, device: torch.device):
 
 
 def prepare_label(label_str: str):
-    return [label.strip() for label in label_str.split(',')]
+    labels = [label.strip() for label in label_str.split(',')]
+    if all('other' not in label.lower() for label in labels):
+        labels.append('other')
+    return labels
 
 
 def set_torch_device(config: dict):
