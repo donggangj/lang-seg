@@ -1,7 +1,7 @@
 from os import remove, listdir, environ
 from os.path import join, exists, basename
 from time import sleep
-from typing import Dict, List
+from typing import Sequence
 
 try:
     import habana_frameworks.torch as htorch
@@ -304,8 +304,7 @@ class MD5LSeg(MD5Table):
         return new_input_paths
 
 
-def get_transform(config: Dict):
-    resize_hw: List[int] = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
+def get_transform(resize_hw: Sequence[int]):
     if any(value <= 0 for value in resize_hw):
         return transforms.Compose(
             [
@@ -325,7 +324,9 @@ def get_transform(config: Dict):
 
 def prepare_image(image_path: str, device: torch.device, config: dict):
     image = Image.open(image_path).convert('RGB')
-    return get_transform(config)(np.array(image)).unsqueeze(0).to(device)
+    resize_hw = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
+    transform = get_transform(resize_hw)
+    return transform(np.array(image)).unsqueeze(0).to(device)
 
 
 def prepare_label(label_str: str):
