@@ -1,6 +1,7 @@
 from os import remove, listdir, environ
 from os.path import join, exists, basename
 from time import sleep
+from typing import Dict, List
 
 try:
     import habana_frameworks.torch as htorch
@@ -9,10 +10,11 @@ except ImportError:
 import numpy as np
 import torch
 from PIL import Image
+from torchvision import transforms
 
 from additional_utils.models import LSeg_habana_MultiEvalModule
-from lseg_web_app.utils import Options, MD5Table
-from lseg_web_app.utils import load_config, check_dir, get_transform
+from lseg_web_app.utils import Options, MD5Table, default_config
+from lseg_web_app.utils import load_config, check_dir
 from modules.lseg_inference import LSegInference
 
 
@@ -300,6 +302,25 @@ class MD5LSeg(MD5Table):
             if old_path != image_path:
                 remove(old_path)
         return new_input_paths
+
+
+def get_transform(config: Dict):
+    resize_hw: List[int] = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
+    if any(value <= 0 for value in resize_hw):
+        return transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+            ]
+        )
+    else:
+        return transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+                transforms.Resize(resize_hw),
+            ]
+        )
 
 
 def prepare_image(image_path: str, device: torch.device, config: dict):

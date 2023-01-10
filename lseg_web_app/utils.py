@@ -8,7 +8,6 @@ from typing import Dict, List
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-import torchvision.transforms as transforms
 from PIL import Image
 
 
@@ -129,25 +128,6 @@ def save_config(config: Dict, path: str):
             json.dump(config, f, indent=4)
     except Exception as err:
         print(err)
-
-
-def get_transform(config: Dict):
-    resize_hw: List[int] = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
-    if any(value <= 0 for value in resize_hw):
-        return transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-            ]
-        )
-    else:
-        return transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-                transforms.Resize(resize_hw),
-            ]
-        )
 
 
 def get_utc_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%SZ'):
