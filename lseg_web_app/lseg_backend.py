@@ -353,7 +353,7 @@ def prepare_label(label_str: str):
     return labels
 
 
-def set_torch_device(config: dict):
+def prepare_torch_device(config: dict):
     if config['device'] == 'hpu' and 'hpu' in torch.__dict__ and torch.hpu.is_available():
         device = torch.device('hpu')
         environ['PT_HPU_LAZY_MODE'] = str(config['hpu_mode'])
@@ -384,7 +384,7 @@ def get_physical_device_name(device: torch.device):
 
 def run_backend(opt):
     config = load_config(opt.config_path)
-    device = set_torch_device(config)
+    device = prepare_torch_device(config)
     lseg_model = load_model(opt).to(device)
 
     # Firstly warmup with test input
