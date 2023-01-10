@@ -322,9 +322,26 @@ def get_transform(resize_hw: Sequence[int]):
         )
 
 
+def get_most_similar_hw(image_hw: Sequence[int], config: dict):
+    static_image_size_params = config.get('static_image_size_params',
+                                          default_config()['static_image_size_params'])
+    hw_ratios = sorted(static_image_size_params['hw_ratios'],
+                       key=lambda r: r[0] / r[1])
+    hw_ratio = hw_ratios[np.argmin([abs(image_hw[0] / image_hw[1] - r[0] / r[1])
+                                    for r in hw_ratios])]
+    short_sizes = sorted(static_image_size_params['short_sizes'])
+    short_size = short_sizes[np.argmin([abs(min(image_hw) - sz)
+                                        for sz in short_sizes])]
+    return [hw_ratio[0] * short_size, hw_ratio[1] * short_size]
+
+
 def prepare_image(image_path: str, device: torch.device, config: dict):
     image = Image.open(image_path).convert('RGB')
-    resize_hw = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
+    is_dynamic = not (config.get('device', 'cpu') == 'hpu' and config.get('hpu_mode', 1) == 1)
+    if is_dynamic:
+        resize_hw = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
+    else:
+        resize_hw = get_most_similar_hw((image.height, image.width), config)
     transform = get_transform(resize_hw)
     return transform(np.array(image)).unsqueeze(0).to(device)
 
