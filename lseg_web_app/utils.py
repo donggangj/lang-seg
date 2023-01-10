@@ -97,7 +97,7 @@ def default_config():
             'sleep_seconds_for_io': 0.3,
             'result_timeout_in_seconds': 60,
             'dynamic_image_hw': [360, 480],
-            "static_image_shapes": {
+            "static_image_size_params": {
                 "hw_ratios": [
                     [9, 16],
                     [16, 9],

@@ -18,7 +18,7 @@
         360,
         480
     ],
-    "static_image_shapes": {
+    "static_image_size_params": {
         "hw_ratios": [
             [
                 9,
