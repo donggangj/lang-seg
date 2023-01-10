@@ -332,7 +332,10 @@ def get_most_similar_hw(image_hw: Sequence[int], config: dict):
     short_sizes = sorted(static_image_size_params['short_sizes'])
     short_size = short_sizes[np.argmin([abs(min(image_hw) - sz)
                                         for sz in short_sizes])]
-    return [hw_ratio[0] * short_size, hw_ratio[1] * short_size]
+    if hw_ratio[0] <= hw_ratio[1]:
+        return [short_size, int(short_size / hw_ratio[0] * hw_ratio[1])]
+    else:
+        return [int(short_size / hw_ratio[1] * hw_ratio[0]), short_size]
 
 
 def prepare_image(image_path: str, device: torch.device, config: dict):
