@@ -1,7 +1,6 @@
 from os import remove, listdir, environ
 from os.path import join, exists, basename
 from time import sleep
-from typing import Callable
 
 try:
     import habana_frameworks.torch as htorch
@@ -303,9 +302,9 @@ class MD5LSeg(MD5Table):
         return new_input_paths
 
 
-def prepare_image(image_path: str, transform: Callable, device: torch.device):
+def prepare_image(image_path: str, device: torch.device, config: dict):
     image = Image.open(image_path).convert('RGB')
-    return transform(np.array(image)).unsqueeze(0).to(device)
+    return get_transform(config)(np.array(image)).unsqueeze(0).to(device)
 
 
 def prepare_label(label_str: str):
@@ -350,8 +349,7 @@ def run_backend(opt):
     lseg_model = load_model(opt).to(device)
 
     # Firstly warmup with test input
-    transform = get_transform(config)
-    image = prepare_image(config['test_image_path'], transform, device)
+    image = prepare_image(config['test_image_path'], device, config)
     labels = prepare_label(config['test_label'])
     data_dir = config['input_dir']
     out_dir = config['output_dir']
@@ -376,7 +374,7 @@ def run_backend(opt):
         for p in input_paths:
             with open(p, 'r') as f:
                 lines = f.readlines()
-            image = prepare_image(lines[0].strip(), transform, device)
+            image = prepare_image(lines[0].strip(), device, config)
             labels = prepare_label(lines[1])
             with torch.no_grad():
                 output = lseg_model(image, labels)
