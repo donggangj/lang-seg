@@ -398,7 +398,8 @@ def warmup_model_on_device(model: Callable, device: torch.device, config: dict):
         hw_ratios = sorted(static_image_size_params['hw_ratios'],
                            key=lambda r: r[0] / r[1])
         short_sizes = sorted(static_image_size_params['short_sizes'])
-        resize_hw_all.extend([(r[0] * sz, r[1] * sz) for r in hw_ratios for sz in short_sizes])
+        resize_hw_all.extend([(int(sz / min(r[:1]) * r[0]), int(sz / min(r[:1]) * r[1]))
+                              for r in hw_ratios for sz in short_sizes])
     test_image_all = []
     for resize_hw in resize_hw_all:
         transform = get_transform(resize_hw)
