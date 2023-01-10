@@ -98,6 +98,16 @@ def default_config():
             'sleep_seconds_for_io': 0.3,
             'result_timeout_in_seconds': 60,
             'dynamic_image_hw': [360, 480],
+            "static_image_shapes": {
+                "hw_ratios": [
+                    [9, 16],
+                    [16, 9],
+                    [3, 4],
+                    [4, 3],
+                    [1, 1]
+                ],
+                "short_size": [360, 720, 1080, 1440, 2560]
+            },
             'device': 'hpu',
             'hpu_mode': 1,
             'render_emoji': False}
