@@ -105,7 +105,7 @@ def default_config():
                     [4, 3],
                     [1, 1]
                 ],
-                "short_size": [360, 720, 1080, 1440, 2560]
+                "short_sizes": [360, 720, 1080, 1440, 2560]
             },
             'device': 'hpu',
             'hpu_mode': 1,
