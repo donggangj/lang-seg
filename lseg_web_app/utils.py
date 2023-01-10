@@ -97,7 +97,7 @@ def default_config():
             'device_name_key': 'device_name',
             'sleep_seconds_for_io': 0.3,
             'result_timeout_in_seconds': 60,
-            'image_hw': [360, 480],
+            'dynamic_image_hw': [360, 480],
             'device': 'hpu',
             'hpu_mode': 1,
             'render_emoji': False}
@@ -122,7 +122,7 @@ def save_config(config: Dict, path: str):
 
 
 def get_transform(config: Dict):
-    resize_hw: List[int] = config.get('image_hw', default_config()['image_hw'])
+    resize_hw: List[int] = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
     if any(value <= 0 for value in resize_hw):
         return transforms.Compose(
             [
