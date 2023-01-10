@@ -1,7 +1,7 @@
 from os import remove, listdir, environ
 from os.path import join, exists, basename
 from time import sleep
-from typing import Sequence
+from typing import Callable, Sequence
 
 try:
     import habana_frameworks.torch as htorch
@@ -382,14 +382,36 @@ def get_physical_device_name(device: torch.device):
     return device_name
 
 
+def warmup_model_on_device(model: Callable, device: torch.device, config: dict):
+    original_image = Image.open(config['test_image_path']).convert('RGB')
+    is_dynamic = not (config.get('device', 'cpu') == 'hpu' and config.get('hpu_mode', 1) == 1)
+    resize_hw_all = []
+    if is_dynamic:
+        resize_hw = config.get('dynamic_image_hw', default_config()['dynamic_image_hw'])
+        resize_hw_all.append(resize_hw)
+    else:
+        static_image_size_params = config.get('static_image_size_params',
+                                              default_config()['static_image_size_params'])
+        hw_ratios = sorted(static_image_size_params['hw_ratios'],
+                           key=lambda r: r[0] / r[1])
+        short_sizes = sorted(static_image_size_params['short_sizes'])
+        resize_hw_all.extend([(r[0] * sz, r[1] * sz) for r in hw_ratios for sz in short_sizes])
+    test_image_all = []
+    for resize_hw in resize_hw_all:
+        transform = get_transform(resize_hw)
+        test_image_all.append(transform(np.array(original_image)).unsqueeze(0).to(device))
+    test_labels = prepare_label(config['test_label'])
+    with torch.no_grad():
+        test_output_all = [(model(test_image, test_labels)) for test_image in test_image_all]
+    return test_image_all, test_labels, test_output_all
+
+
 def run_backend(opt):
     config = load_config(opt.config_path)
     device = prepare_torch_device(config)
     lseg_model = load_model(opt).to(device)
 
     # Firstly warmup with test input
-    image = prepare_image(config['test_image_path'], device, config)
-    labels = prepare_label(config['test_label'])
     data_dir = config['input_dir']
     out_dir = config['output_dir']
     image_key = config['image_key']
@@ -397,12 +419,11 @@ def run_backend(opt):
     output_key = config['output_key']
     device_name_key = config['device_name_key']
     device_name = get_physical_device_name(device)
-    with torch.no_grad():
-        output = lseg_model(image, labels)
-        kwargs = {image_key: image.cpu(), labels_key: labels,
-                  output_key: output.cpu(), device_name_key: device_name}
-        test_output_update_path = join(out_dir, config['test_output_update_name'])
-        np.savez_compressed(test_output_update_path, **kwargs)
+    test_image_all, test_labels, test_output_all = warmup_model_on_device(lseg_model, device, config)
+    kwargs = {image_key: test_image_all[0].cpu(), labels_key: test_labels,
+              output_key: test_output_all[0].cpu(), device_name_key: device_name}
+    test_output_update_path = join(out_dir, config['test_output_update_name'])
+    np.savez_compressed(test_output_update_path, **kwargs)
 
     # Then keep processing until test output is removed
     test_output_path = join(out_dir, config['test_output_name'])
