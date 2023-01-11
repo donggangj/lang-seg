@@ -134,7 +134,7 @@ def parse_result(res_path: str, config: dict):
                 sleep(config['sleep_seconds_for_io'])
             else:
                 print(f'Failed to parse result {res_path}!')
-                image_array: np.ndarray = np.zeros((1, *config['image_hw'], 3))
+                image_array: np.ndarray = np.zeros((1, *config['dynamic_image_hw'], 3))
                 labels: List[str] = []
                 output: np.ndarray = np.asarray([])
                 device_name: str = ''
