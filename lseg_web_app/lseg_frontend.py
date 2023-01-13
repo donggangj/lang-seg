@@ -10,7 +10,7 @@ import streamlit as st
 from PIL import Image
 
 from lseg_web_app.utils import (Options, load_config, check_dir, get_utc_time_stamp, calc_error,
-                                get_result_figure, get_preview_figure)
+                                get_result_figure, get_preview_figure, get_new_pallete)
 
 
 def init_session_state():
@@ -145,8 +145,10 @@ def parse_result(res_path: str, config: dict):
 
 
 def get_mask_and_object_images(image: Image.Image, output: np.ndarray):
+    label_len = output.shape[1]
     mask_array = np.uint8(np.argmax(output, 1).squeeze())
-    mask_image = Image.fromarray(mask_array)
+    mask_image = Image.fromarray(mask_array.squeeze().astype('uint8'))
+    mask_image.putpalette(get_new_pallete(label_len))
     mask_and_object_images = [mask_image]
     mask_array = mask_array.reshape((*mask_array.shape, 1))
     image = image.convert('RGBA')
