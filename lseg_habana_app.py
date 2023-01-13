@@ -3,21 +3,38 @@ import argparse
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-import streamlit as st
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
 from additional_utils.models import LSeg_MultiEvalModule, LSeg_habana_MultiEvalModule
 from modules.lseg_inference import LSegInference
-# INTEL_CUSTOMIZATION
+import os, time
+from typing import Optional, Callable
+
 import habana_frameworks.torch as htorch
 if htorch.hpu.is_available():
     # Use hpu as device
     device = torch.device('hpu')
-# END of INTEL_CUSTOMIZATION
+    # Set Habana to Eager Mode
+    os.environ['PT_HPU_LAZY_MODE'] = '2'
 
-st.set_page_config(layout="wide")
+
+def get_time_stamp(fmt: str = '%y-%m-%d-%H-%M-%S'):
+    return time.strftime(fmt)
+
+
+def iterate_time(func: Callable, *x_in, n_repeat=10):
+    outputs = []
+    ts = []
+    t0 = time.time()
+    for _ in range(n_repeat):
+        output = func(*x_in)
+        outputs.append(output)
+        t1 = time.time()
+        ts.append((t1 - t0) * 1000)
+        t0 = t1
+    return ts, outputs
 
 
 def get_new_pallete(num_cls):
@@ -58,7 +75,6 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
     return out_img, patches
 
 
-@st.cache(allow_output_mutation=True)
 def load_model():
     class Options:
         def __init__(self):
@@ -296,7 +312,7 @@ def load_model():
         [
             transforms.ToTensor(),
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
-            transforms.Resize([360, 480]),
+            # transforms.Resize([360, 480]),
         ]
     )
 
@@ -305,10 +321,8 @@ def load_model():
 
 def lseg_demo():
     lseg_model, lseg_transform = load_model()
-    # uploaded_file = st.file_uploader("Choose an image...")
     uploaded_file = 'samples/cat1.jpeg'
-    input_labels = st.text_input("Input labels", value="plant,grass,cat,stone,other")
-    st.write("The labels are", input_labels)
+    input_labels = "plant,grass,cat,stone,other"
 
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
@@ -341,20 +355,47 @@ def lseg_demo():
         mask, patches = get_new_mask_pallete(pred, new_palette, out_label_flag=True, labels=labels)
         seg = mask.convert("RGBA")
 
-        fig = plt.figure()
-        plt.subplot(121)
-        plt.imshow(image)
-        plt.axis('off')
 
-        plt.subplot(122)
-        plt.imshow(seg)
-        plt.legend(handles=patches, loc='upper right', bbox_to_anchor=(1.3, 1), prop={'size': 5})
-        plt.axis('off')
+def lseg_performance_test(input_path='./performance_test/inputs', input_labels='cat,stone,plants,other',
+                            out_dir='./performance_test/outputs', log_dir='./performance_test/logs', n_repeat: int = -1):
+    lseg_model, lseg_transform = load_model()
+    image_list = [os.listdir(input_path)[3]]
 
-        plt.tight_layout()
+    labels = []
+    for label in input_labels.split(","):
+        labels.append(label.strip())
 
-        st.image([image,seg], width=700, caption=["Input image", "Segmentation"])
-        st.pyplot(fig)
+    for image_path in image_list:
+        image = Image.open(os.path.join(input_path, image_path))
+        print(f"=========={image.size}==========")
+        pimage = lseg_transform(np.array(image)).unsqueeze(0).to(device)
+        with torch.no_grad():
+            if n_repeat <= 0:
+                outputs = lseg_model.forward(pimage, labels)
+            else:
+                x_in = (pimage, labels)
+                log_path = os.path.join(log_dir, f'refactored_inference_time_{get_time_stamp()}_{image.size}.log')
+                ts, outputs = iterate_time(lseg_model.forward, *x_in, n_repeat=n_repeat+1)
+                outputs = outputs[:1][0]
+                with open(log_path, 'w') as f:
+                    f.write(f'image_path: {image_path}\n'
+                            f'label: {labels}\n'
+                            f'device: {htorch.hpu.get_device_name()}\n'
+                            f'n_repeat: {n_repeat}\n'
+                            f'mean inference time (ms): {sum(ts[-n_repeat:]) / n_repeat:.3e}\n'
+                            f'starting time (ms): {ts[:-n_repeat]}\n'
+                            f'inference time (ms):\n{ts[-n_repeat:]}\n')
+        title = f'{image.size} image Gaudi inference result'
+        predicts = [
+            torch.max(outputs, 1)[1].cpu().numpy()
+            for output in [outputs]
+        ]
+        print([predict.shape for predict in predicts])
+        predict = predicts[0]
+        show_result(pimage, predict, labels,
+                    save_path=os.path.join(out_dir, f'refactored_inference_{get_time_stamp()}_{image.size}.jpg'),
+                    title=title)
+                
 
 def calculate_error(output_path, ref_output_path):
     def mae(ref, pred):
@@ -404,7 +445,8 @@ def show_result(image, predict, labels: list, save_path: str, title='', alpha=0.
 
 
 def main():
-    lseg_demo()
+    # lseg_demo()
+    lseg_performance_test(n_repeat=3)
 
 
 if __name__ == '__main__':
