@@ -45,8 +45,7 @@ class LSeg_habana_MultiEvalModule(nn.Module):
     def forward(self, image, label_set=''):
         """Mult-size Evaluation"""
         # only single image is supported for evaluation
-        if len(label_set) < 10:
-            print('** MultiEvalModule forward phase: {} **'.format(label_set))
+        print('** MultiEvalModule forward phase: {} **'.format(label_set))
         batch, _, h, w = image.size()
         assert(batch == 1)
         self.nclass = len(label_set)

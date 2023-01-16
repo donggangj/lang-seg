@@ -119,7 +119,7 @@ def update_result(config: dict):
 
 
 def parse_result(res_path: str, config: dict):
-    max_try = 3
+    max_try = 10
     for i in range(max_try):
         try:
             with np.load(res_path) as res:
@@ -234,9 +234,6 @@ def run_frontend(opt):
     out_dir = config['output_dir']
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
-        if st.session_state['show_result'] and not exists(st.session_state['last_result_path']):
-            st.markdown(f'{get_emoji("hugging_face", config)}:green[Initial test result]:')
-            show_test_result(config)
         col1, col2 = st.columns(2)
         col2.radio(f'{get_emoji("open_mouth", config)}Choose how to input image:',
                    ('Upload', 'Select from samples'),

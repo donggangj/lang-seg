@@ -349,10 +349,13 @@ def prepare_image(image_path: str, device: torch.device, config: dict):
     return transform(np.array(image)).unsqueeze(0).to(device)
 
 
-def prepare_label(label_str: str):
+def prepare_input_label(label_str: str, config: dict):
     labels = [label.strip() for label in label_str.split(',')]
-    if all('other' not in label.lower() for label in labels):
-        labels.append('other')
+    labels.extend(['other'] * (config['default_lazy_mode_label_number'] - len(labels)))
+    return labels
+
+def prepare_output_label(label_str: str):
+    labels = [label.strip() for label in label_str.split(',')]
     return labels
 
 
@@ -404,7 +407,7 @@ def warmup_model_on_device(model: Callable, device: torch.device, config: dict):
     for resize_hw in resize_hw_all:
         transform = get_transform(resize_hw)
         test_image_all.append(transform(np.array(original_image)).unsqueeze(0).to(device))
-    test_labels = prepare_label(config['test_label'])
+    test_labels = prepare_input_label(config['test_label'], config)
     with torch.no_grad():
         test_output_all = [(model(test_image, test_labels)) for test_image in test_image_all]
     return test_image_all, test_labels, test_output_all
@@ -424,7 +427,7 @@ def run_backend(opt):
     device_name_key = config['device_name_key']
     device_name = get_physical_device_name(device)
     test_image_all, test_labels, test_output_all = warmup_model_on_device(lseg_model, device, config)
-    kwargs = {image_key: test_image_all[0].cpu(), labels_key: test_labels,
+    kwargs = {image_key: test_image_all[0].cpu(), labels_key: prepare_output_label(config['test_label']),
               output_key: test_output_all[0].cpu(), device_name_key: device_name}
     test_output_update_path = join(out_dir, config['test_output_update_name'])
     np.savez_compressed(test_output_update_path, **kwargs)
@@ -439,10 +442,10 @@ def run_backend(opt):
             with open(p, 'r') as f:
                 lines = f.readlines()
             image = prepare_image(lines[0].strip(), device, config)
-            labels = prepare_label(lines[1])
+            labels = prepare_input_label(lines[1], config)
             with torch.no_grad():
                 output = lseg_model(image, labels)
-                kwargs = {image_key: image.cpu(), labels_key: labels,
+                kwargs = {image_key: image.cpu(), labels_key: prepare_output_label(lines[1]),
                           output_key: output.cpu(), device_name_key: device_name}
                 np.savez_compressed(join(out_dir, basename(p)), **kwargs)
                 remove(p)
