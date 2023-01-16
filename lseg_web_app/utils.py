@@ -173,14 +173,12 @@ def get_new_mask_pallete(npimg, new_palette, out_label_flag=False, labels=None):
         u_index = np.unique(npimg)
         patches = []
         for i, index in enumerate(u_index):
-            try:
+            if index < len(labels):
                 label = labels[index]
                 cur_color = [new_palette[index * 3] / 255.0, new_palette[index * 3 + 1] / 255.0,
-                            new_palette[index * 3 + 2] / 255.0]
+                             new_palette[index * 3 + 2] / 255.0]
                 red_patch = mpatches.Patch(color=cur_color, label=label)
                 patches.append(red_patch)
-            except:
-                continue
     return out_img, patches
 
 
