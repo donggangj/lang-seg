@@ -109,7 +109,8 @@ def default_config():
             },
             'device': 'hpu',
             'hpu_mode': 1,
-            'render_emoji': False}
+            'render_emoji': False,
+            "default_lazy_mode_label_number": 20}
 
 
 def load_config(path: str):
