@@ -189,6 +189,10 @@ def get_result_figure(image: Image.Image, labels: List[str], output: np.ndarray,
     mask, patches = get_new_mask_palette(predict, new_palette, out_label_flag=True, labels=labels)
     seg = mask.convert("RGBA")
     out = Image.blend(image, seg, alpha)
+    if len(np.unique(predict)) > len(labels):
+        ex_mask_array = predict >= len(labels)
+        seg = Image.fromarray(seg * (1 - ex_mask_array) + image * ex_mask_array)
+        out = Image.fromarray(out * (1 - ex_mask_array) + image * ex_mask_array)
     fig = plt.figure(figsize=(19.2, 3.6))
     axes = fig.subplots(1, 3)
     axes[0].imshow(image)
