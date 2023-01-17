@@ -351,8 +351,14 @@ def prepare_image(image_path: str, device: torch.device, config: dict):
 
 def prepare_input_label(label_str: str, config: dict):
     labels = [label.strip() for label in label_str.split(',')]
-    labels.extend(['other'] * (config['default_lazy_mode_label_number'] - len(labels)))
+    is_dynamic = not (config.get('device', 'cpu') == 'hpu' and config.get('hpu_mode', 1) == 1)
+    if is_dynamic:
+        if all('other' not in label.lower() for label in labels):
+            labels.append('other')
+    else:
+        labels.extend(['other'] * (config['default_lazy_mode_label_number'] - len(labels)))
     return labels
+
 
 def prepare_output_label(label_str: str):
     labels = [label.strip() for label in label_str.split(',')]
