@@ -190,7 +190,7 @@ def get_result_figure(image: Image.Image, labels: List[str], output: np.ndarray,
     seg = mask.convert("RGBA")
     out = Image.blend(image, seg, alpha)
     if len(np.unique(predict)) > len(labels):
-        ex_mask_array = predict >= len(labels)
+        ex_mask_array = (predict >= len(labels)).squeeze()
         ex_mask_array = ex_mask_array.reshape((*ex_mask_array.shape, 1))
         seg = Image.fromarray(seg * (1 - ex_mask_array) + image * ex_mask_array)
         out = Image.fromarray(out * (1 - ex_mask_array) + image * ex_mask_array)
