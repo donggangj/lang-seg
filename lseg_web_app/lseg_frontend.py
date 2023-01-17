@@ -150,6 +150,7 @@ def get_mask_images_and_object_images(image: Image.Image, output: np.ndarray, n_
     object_mask_array = np.uint8(predict.squeeze())
     mask_image = Image.fromarray(object_mask_array.squeeze().astype('uint8'))
     mask_image.putpalette(get_new_palette(n_label_out))
+    mask_image.convert('RGBA')
     mask_images = [mask_image]
     if n_label_out > n_label_in:
         ex_mask_array = (predict >= n_label_in).squeeze()
