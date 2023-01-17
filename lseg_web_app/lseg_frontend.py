@@ -153,6 +153,7 @@ def get_mask_images_and_object_images(image: Image.Image, output: np.ndarray, n_
     mask_images = [mask_image]
     if n_label_out > n_label_in:
         ex_mask_array = predict >= n_label_in
+        ex_mask_array = ex_mask_array.reshape((*ex_mask_array.shape, 1))
         mask_images.append(Image.fromarray(mask_image * (1 - ex_mask_array) + image * ex_mask_array))
     object_mask_array = object_mask_array.reshape((*object_mask_array.shape, 1))
     object_images = []
