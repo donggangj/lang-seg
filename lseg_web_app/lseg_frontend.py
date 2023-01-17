@@ -144,29 +144,34 @@ def parse_result(res_path: str, config: dict):
     return image, labels, output, device_name
 
 
-def get_mask_and_object_images(image: Image.Image, output: np.ndarray):
-    label_len = output.shape[1]
-    mask_array = np.uint8(np.argmax(output, 1).squeeze())
-    mask_image = Image.fromarray(mask_array.squeeze().astype('uint8'))
-    mask_image.putpalette(get_new_palette(label_len))
-    mask_and_object_images = [mask_image]
-    mask_array = mask_array.reshape((*mask_array.shape, 1))
+def get_mask_images_and_object_images(image: Image.Image, output: np.ndarray, n_label_in: int):
+    n_label_out = output.shape[1]
+    predict = np.argmax(output, 1)
+    object_mask_array = np.uint8(predict.squeeze())
+    mask_image = Image.fromarray(object_mask_array.squeeze().astype('uint8'))
+    mask_image.putpalette(get_new_palette(n_label_out))
+    mask_images = [mask_image]
+    if n_label_out > n_label_in:
+        ex_mask_array = predict >= n_label_in
+        mask_images.append(Image.fromarray(mask_image * (1 - ex_mask_array) + image * ex_mask_array))
+    object_mask_array = object_mask_array.reshape((*object_mask_array.shape, 1))
+    object_images = []
     image = image.convert('RGBA')
-    for label_id in range(mask_array.max() + 1):
-        mask_and_object_images.append(Image.fromarray(image * (mask_array == label_id)))
-    return mask_and_object_images
+    for label_id in range(object_mask_array.max() + 1):
+        object_images.append(Image.fromarray(image * (object_mask_array == label_id)))
+    return mask_images, object_images
 
 
-def save_mask_and_object_images(mask_and_object_images: List[Image.Image],
-                                labels: List[str],
-                                save_dir: str):
+def save_mask_images_and_object_images(mask_images: List[Image.Image],
+                                       object_images: List[Image.Image],
+                                       labels: List[str],
+                                       save_dir: str):
     image_paths: List[str] = []
-    if not isdir(save_dir) or len(mask_and_object_images) == 0:
+    if not isdir(save_dir) or len(mask_images + object_images) == 0:
         return image_paths
-    mask_image = mask_and_object_images[0]
-    object_images = mask_and_object_images[1:]
-    image_paths.append(join(save_dir, 'mask.png'))
-    mask_image.save(image_paths[-1])
+    for mask_id, mask_image in enumerate(mask_images):
+        image_paths.append(join(save_dir, f'mask_ver{mask_id}.png'))
+        mask_image.save(image_paths[-1])
     for label_id, (label, object_image) in enumerate(zip(labels, object_images)):
         image_paths.append(join(save_dir, f'{label_id}_{label}.png'))
         object_image.save(image_paths[-1])
@@ -198,8 +203,9 @@ def prepare_download_file(image: Image.Image, labels: List[str], output: np.ndar
     makedirs(parsed_result_dir)
     image_paths = [join(parsed_result_dir, 'input_image.png')]
     image.save(image_paths[-1])
-    mask_and_object_images = get_mask_and_object_images(image, output)
-    image_paths.extend(save_mask_and_object_images(mask_and_object_images, labels, parsed_result_dir))
+    mask_images, object_images = get_mask_images_and_object_images(image, output, len(labels))
+    image_paths.extend(save_mask_images_and_object_images(mask_images, object_images,
+                                                          labels, parsed_result_dir))
     zip_path = join(parsed_result_dir, f'{st.session_state["last_time_stamp"]}.zip')
     if zip_and_save(zip_path, *image_paths):
         st.session_state['last_download_path'] = zip_path
