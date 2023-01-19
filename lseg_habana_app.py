@@ -357,9 +357,9 @@ def lseg_demo():
 
 
 def lseg_performance_test(input_path='./performance_test/inputs', input_labels='cat,stone,plants,other',
-                            out_dir='./performance_test/outputs', log_dir='./performance_test/logs', n_repeat: int = -1):
+                            out_dir='./performance_test/outputs', log_dir='./performance_test/logs/diff_labels', n_repeat: int = -1):
     lseg_model, lseg_transform = load_model()
-    image_list = [os.listdir(input_path)[3]]
+    image_list = [os.listdir(input_path)[0]]
 
     labels = []
     for label in input_labels.split(","):
@@ -374,7 +374,7 @@ def lseg_performance_test(input_path='./performance_test/inputs', input_labels='
                 outputs = lseg_model.forward(pimage, labels)
             else:
                 x_in = (pimage, labels)
-                log_path = os.path.join(log_dir, f'refactored_inference_time_{get_time_stamp()}_{image.size}.log')
+                log_path = os.path.join(log_dir, f'refactored_inference_time_{get_time_stamp()}_{image.size}_{len(labels)} labels.log')
                 ts, outputs = iterate_time(lseg_model.forward, *x_in, n_repeat=n_repeat+1)
                 outputs = outputs[:1][0]
                 with open(log_path, 'w') as f:
@@ -390,7 +390,6 @@ def lseg_performance_test(input_path='./performance_test/inputs', input_labels='
             torch.max(outputs, 1)[1].cpu().numpy()
             for output in [outputs]
         ]
-        print([predict.shape for predict in predicts])
         predict = predicts[0]
         show_result(pimage, predict, labels,
                     save_path=os.path.join(out_dir, f'refactored_inference_{get_time_stamp()}_{image.size}.jpg'),
@@ -446,7 +445,7 @@ def show_result(image, predict, labels: list, save_path: str, title='', alpha=0.
 
 def main():
     # lseg_demo()
-    lseg_performance_test(n_repeat=3)
+    lseg_performance_test(n_repeat=10)
 
 
 if __name__ == '__main__':
