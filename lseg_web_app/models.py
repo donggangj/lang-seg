@@ -3,7 +3,7 @@ import math
 import numpy as np
 import torch
 import torch.nn.functional as nn_func
-from torch import nn
+from torch import nn, Tensor
 
 
 class LSeg_habana_MultiEvalModule(nn.Module):
@@ -20,7 +20,7 @@ class LSeg_habana_MultiEvalModule(nn.Module):
         self.flip = flip
         print('MultiEvalModule: base_size {}, crop_size {}'.format(self.base_size, self.crop_size))
 
-    def forward(self, image, label_set=''):
+    def forward(self, image: Tensor, label_set=''):
         """Mult-size Evaluation"""
         # only single image is supported for evaluation
         print('** MultiEvalModule forward phase: {} **'.format(label_set))
