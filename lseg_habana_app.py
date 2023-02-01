@@ -7,7 +7,8 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 
-from additional_utils.models import LSeg_MultiEvalModule, LSeg_habana_MultiEvalModule
+from additional_utils.models import LSeg_MultiEvalModule
+from lseg_web_app.models import LSeg_habana_MultiEvalModule
 from modules.lseg_inference import LSegInference
 import os, time
 from typing import Optional, Callable
