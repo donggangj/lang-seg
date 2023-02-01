@@ -1,21 +1,16 @@
-import math
-import types
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-from .lseg_blocks import FeatureFusionBlock, Interpolate, _make_encoder, FeatureFusionBlock_custom, forward_vit
 import clip
 import numpy as np
-import pandas as pd
-import os
+import torch
+import torch.nn as nn
+
+from .lseg_blocks import Interpolate, _make_encoder, FeatureFusionBlock_custom, forward_vit
+
 
 class depthwise_clipseg_conv(nn.Module):
     def __init__(self):
         super(depthwise_clipseg_conv, self).__init__()
         self.depthwise = nn.Conv2d(1, 1, kernel_size=3, padding=1)
-    
+
     def depthwise_clipseg(self, x, channels):
         x = torch.cat([self.depthwise(x[:, i].unsqueeze(1)) for i in range(channels)], dim=1)
         return x
@@ -69,7 +64,6 @@ class bottleneck_block(nn.Module):
         elif activation == 'tanh':
             self.activation = nn.Tanh()
 
-
     def forward(self, x, act=True):
         sum_layer = x.max(dim=1, keepdim=True)[0]
         x = self.depthwise(x)
@@ -77,6 +71,7 @@ class bottleneck_block(nn.Module):
         if act:
             x = self.activation(x)
         return x
+
 
 class BaseModel(torch.nn.Module):
     def load(self, path):
@@ -91,6 +86,7 @@ class BaseModel(torch.nn.Module):
 
         self.load_state_dict(parameters)
 
+
 def _make_fusion_block(features, use_bn):
     return FeatureFusionBlock_custom(
         features,
@@ -101,16 +97,17 @@ def _make_fusion_block(features, use_bn):
         align_corners=True,
     )
 
+
 class LSeg(BaseModel):
     def __init__(
-        self,
-        head,
-        features=256,
-        backbone="clip_vitl16_384",
-        readout="project",
-        channels_last=False,
-        use_bn=False,
-        **kwargs,
+            self,
+            head,
+            features=256,
+            backbone="clip_vitl16_384",
+            readout="project",
+            channels_last=False,
+            use_bn=False,
+            **kwargs,
     ):
         super(LSeg, self).__init__()
 
@@ -155,15 +152,15 @@ class LSeg(BaseModel):
 
         self.scratch.output_conv = head
 
-        self.text = clip.tokenize(self.labels)    
-        
+        self.text = clip.tokenize(self.labels)
+
     def forward(self, x, labelset=''):
         if labelset == '':
             text = self.text
         else:
             text = clip.tokenize(labelset)
         text = text.to(x.device)
-        
+
         if self.channels_last == True:
             x.contiguous(memory_format=torch.channels_last)
 
@@ -186,17 +183,17 @@ class LSeg(BaseModel):
         image_features = self.scratch.head1(path_1)
 
         imshape = image_features.shape
-        image_features = image_features.permute(0,2,3,1).reshape(-1, self.out_c)
+        image_features = image_features.permute(0, 2, 3, 1).reshape(-1, self.out_c)
 
         # normalized features
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-        
+
         # INTEL_CUSTOMIZATION
         logits_per_image = self.logit_scale * image_features @ text_features.t()
         # END of INTEL_CUSTOMIZATION
 
-        out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0,3,1,2)
+        out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0, 3, 1, 2)
 
         if self.arch_option in [1, 2]:
             for _ in range(self.block_depth - 1):
@@ -204,14 +201,14 @@ class LSeg(BaseModel):
             out = self.scratch.head_block(out, False)
 
         out = self.scratch.output_conv(out)
-            
+
         return out
 
 
 class LSegNet(LSeg):
     """Network for semantic segmentation."""
-    def __init__(self, labels, path=None, scale_factor=0.5, crop_size=480, **kwargs):
 
+    def __init__(self, labels, path=None, scale_factor=0.5, crop_size=480, **kwargs):
         features = kwargs["features"] if "features" in kwargs else 256
         kwargs["use_bn"] = True
 
@@ -227,8 +224,3 @@ class LSegNet(LSeg):
 
         if path is not None:
             self.load(path)
-
-
-    
-        
-    
