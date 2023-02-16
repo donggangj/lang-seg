@@ -26,6 +26,8 @@ def init_session_state():
         st.session_state['last_result_path'] = ''
     if 'last_download_path' not in st.session_state:
         st.session_state['last_download_path'] = ''
+    if 'display_from_sample' not in st.session_state:
+        st.session_state['display_from_sample'] = True
 
 
 def reset_interaction_state():
@@ -34,6 +36,14 @@ def reset_interaction_state():
 
 def hide_result():
     st.session_state['show_result'] = False
+
+def display_sample_image():
+    st.session_state['show_result'] = False
+    st.session_state['display_from_sample'] = True
+
+def display_uploaded_image():
+    st.session_state['show_result'] = False
+    st.session_state['display_from_sample'] = False
 
 
 def get_emoji(emoji_name: str, config: dict):
@@ -243,34 +253,44 @@ def run_frontend(opt):
     test_output_path = join(out_dir, config['test_output_name'])
     if exists(test_output_path):
         col1, col2 = st.columns(2)
-        col2.radio(f'{get_emoji("open_mouth", config)}Choose how to input image:',
-                   ('Upload', 'Select from samples'),
-                   key='input_selection',
-                   horizontal=True,
-                   on_change=hide_result,
-                   disabled=st.session_state['disable_interaction'])
-        if st.session_state['input_selection'] == 'Upload':
-            uploaded = col1.file_uploader(f'{get_emoji("smirk", config)}Choose an image...',
-                                          on_change=hide_result,
-                                          disabled=st.session_state['disable_interaction'])
-            if uploaded is not None:
-                col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
-                col1.image(uploaded)
-            elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
-                col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
-                col1.image(st.session_state['last_image_path'])
-        else:
-            sample_paths = get_available_sample_paths(config)
-            col1.pyplot(get_preview_figure(sample_paths))
-            option = col1.selectbox(f'{get_emoji("wink", config)}'
-                                    f'Select a sample image by index:',
-                                    [str(i) for i in range(len(sample_paths))],
-                                    on_change=hide_result,
-                                    disabled=st.session_state['disable_interaction'])
-            uploaded = sample_paths[int(option)]
-            if not st.session_state['show_result']:
-                col1.write(f'{get_emoji("sunglasses", config)}Last selected sample image:')
-                col1.image(uploaded)
+
+        sample_paths = get_available_sample_paths(config)
+        fig = get_preview_figure(sample_paths)
+        col1.pyplot(fig)
+
+        radio_style = """
+                    <style>
+                        [role=radiogroup]
+                        {
+                            gap: 7rem;
+                        }
+                    </style>
+                    """
+        st.markdown(radio_style, unsafe_allow_html=True)
+        option = col1.radio(f'{get_emoji("wink", config)}'
+                            f'Select a sample image by index:',
+                            [str(i) for i in range(len(sample_paths))],
+                            horizontal=True,
+                            on_change=display_sample_image,
+                            disabled=st.session_state['disable_interaction'])
+        sample_image = sample_paths[int(option)]
+
+        uploaded_image = col2.file_uploader(f'{get_emoji("smirk", config)}Choose an image...',
+                                        on_change=display_uploaded_image,
+                                        disabled=st.session_state['disable_interaction'])
+
+        if st.session_state['display_from_sample'] and not st.session_state['show_result']:
+            col1.write(f'{get_emoji("sunglasses", config)}Last selected sample image:')
+            col1.image(sample_image)
+            uploaded = sample_image
+        elif not st.session_state['display_from_sample'] and uploaded_image is not None:
+            col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
+            col1.image(uploaded_image)
+            uploaded = uploaded_image
+        elif exists(st.session_state['last_image_path']) and not exists(st.session_state['last_result_path']):
+            col1.write(f'{get_emoji("sunglasses", config)}Last uploaded image:')
+            col1.image(st.session_state['last_image_path'])
+
         label = col2.text_input(f'{get_emoji("face_with_monocle", config)}Input labels',
                                 disabled=st.session_state['disable_interaction'],
                                 help='Labels split by comma \",\" and '
@@ -299,7 +319,7 @@ def run_frontend(opt):
                                         title=f'{device_name} inference for input'
                                               f' {basename(st.session_state["last_result_path"]).rsplit(".", 1)[0]}')
                 st.pyplot(fig)
-        if exists(st.session_state["last_download_path"]):
+        if exists(st.session_state["last_download_path"]) and st.session_state['show_result']:
             with open(st.session_state["last_download_path"], 'rb') as f:
                 col2.download_button(f'{get_emoji("heart_eyes", config)}**Download mask & object images**',
                                      f,
