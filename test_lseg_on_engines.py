@@ -159,10 +159,10 @@ def test_ov(ir_path: str, image_path: str, label: str, alpha=0.5,
     def to_numpy(tensor: torch.Tensor):
         return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
-    if device.lower() not in ['cpu']:
-        device = 'CPU'
-    else:
+    if device.lower().startswith('gpu'):
         device = device.upper()
+    else:
+        device = 'CPU'
     device_name = get_physical_device_name(device.lower())
     core = Core()
     ir_model = core.read_model(ir_path)
@@ -238,23 +238,49 @@ def main(test_mode=0):
     onnx_path = './LANG-SEG-opset16.onnx'
     ir_path = './ov_py39/LANG-SEG_opset16.xml'
     ref_data_path = './original_output.npz'
-    # ref = load_ref_data(ref_data_path)
-    ref = None
+    if test_mode != -1:
+        samples = samples[:1]
+        ref = None
+        n_repeat = 10
+    else:
+        ref = load_ref_data(ref_data_path)
+        n_repeat = -1
+
     if test_mode == 0 or test_mode == -1:
-        print(f'Testing ONNX......')
-        device = 'cuda'
+        device = 'cpu'
+        print(f'Testing ONNX on {device}......')
         for sample in samples:
             fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
             test_onnx(onnx_path, **sample, alpha=alpha,
                       save_path=fig_path, ref=ref, device=device)
         print(f'Finished testing')
     if test_mode == 1 or test_mode == -1:
-        print(f'Testing OpenVINO......')
-        device = 'cpu'
+        device = 'cuda'
+        print(f'Testing ONNX on {device}......')
         for sample in samples:
-            test_ov(ir_path, **sample, alpha=alpha, device=device, ref=ref, n_repeat=10)
+            fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
+            test_onnx(onnx_path, **sample, alpha=alpha,
+                      save_path=fig_path, ref=ref, device=device)
+        print(f'Finished testing')
+    if test_mode == 2 or test_mode == -1:
+        device = 'CPU'
+        print(f'Testing OpenVINO on {device}......')
+        for sample in samples:
+            test_ov(ir_path, **sample, alpha=alpha, device=device, ref=ref, n_repeat=n_repeat)
+        print(f'Finished testing')
+    if test_mode == 3 or test_mode == -1:
+        device = 'GPU.0'
+        print(f'Testing OpenVINO on {device}......')
+        for sample in samples:
+            test_ov(ir_path, **sample, alpha=alpha, device=device, ref=ref, n_repeat=n_repeat)
+        print(f'Finished testing')
+    if test_mode == 4 or test_mode == -1:
+        device = 'GPU.1'
+        print(f'Testing OpenVINO on {device}......')
+        for sample in samples:
+            test_ov(ir_path, **sample, alpha=alpha, device=device, ref=ref, n_repeat=n_repeat)
         print(f'Finished testing')
 
 
 if __name__ == '__main__':
-    main(1)
+    main(4)
