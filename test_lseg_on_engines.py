@@ -195,7 +195,7 @@ def test_ov(ir_path: str, image_path: str, label: str, alpha=0.5,
     show_result(image, np.argmax(out, 1), labels, alpha, fig_path, title)
 
 
-def load_image(image_path='samples/cat1.jpeg'):
+def load_image(image_path='samples/cat1.png'):
     image = Image.open(image_path)
     image = np.array(image)
     transform = transforms.Compose(
@@ -222,15 +222,15 @@ def load_ref_data(data_path='original_result.npz'):
 
 def main(test_mode=0):
     samples = [
-        {'image_path': './samples/cat1.jpeg',
+        {'image_path': './samples/cat1.png',
          'label': 'plant,grass,cat,stone,other'},
-        {'image_path': './samples/cat1.jpeg',
+        {'image_path': './samples/cat1.png',
          'label': 'plant,cat,stone,other'},
-        {'image_path': './samples/ADE_val_00000001.jpg',
+        {'image_path': './samples/ADE_val_00000001.png',
          'label': 'house,grass,sky,other'},
-        {'image_path': './samples/ADE_val_00000001.jpg',
+        {'image_path': './samples/ADE_val_00000001.png',
          'label': 'house,sky,other'},
-        {'image_path': './samples/ADE_val_00000001.jpg',
+        {'image_path': './samples/ADE_val_00000001.png',
          'label': 'house,sky,grass,wall,other'}
     ]
     out_dir = './outputs'
