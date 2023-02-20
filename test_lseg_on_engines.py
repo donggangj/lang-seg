@@ -32,17 +32,22 @@ def iterate_time(func: Callable, *x_in, n_repeat=10):
 
 def get_physical_device_name(device: str):
     device_name = 'unknown'
-    if device == 'cpu':
+    if device.lower().startswith('cpu'):
         with open('/proc/cpuinfo', 'r') as f:
             lines = f.readlines()
         for line in lines:
             if 'model name' in line:
                 device_name = line.split(':')[-1].strip()
                 break
-    elif device == 'cuda' and 'cuda' in torch.__dict__ and torch.cuda.is_available():
+    elif device.lower().startswith('cuda') and 'cuda' in torch.__dict__ and torch.cuda.is_available():
         device_name = torch.cuda.get_device_name()
-    elif device == 'hpu' and 'hpu' in torch.__dict__ and torch.hpu.is_available():
+    elif device.lower().startswith('hpu') and 'hpu' in torch.__dict__ and torch.hpu.is_available():
         device_name = torch.hpu.get_device_name()
+    elif device.lower().startswith('gpu'):
+        core = Core()
+        available_gpus = [_device for _device in core.available_devices if 'gpu' in _device]
+        if device in available_gpus:
+            device_name = core.get_property(device_name, "FULL_DEVICE_NAME")
     return device_name
 
 
