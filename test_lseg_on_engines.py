@@ -240,10 +240,10 @@ def main(test_mode=0):
     ref_data_path = './original_output.npz'
     if test_mode != -1:
         samples = samples[:1]
-        ref = None
+        ref = load_ref_data(ref_data_path)
         n_repeat = 10
     else:
-        ref = load_ref_data(ref_data_path)
+        ref = None
         n_repeat = -1
 
     if test_mode == 0 or test_mode == -1:
