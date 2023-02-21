@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 
 # Model data
+checkpoints/
 ov_*
 
 # test output
