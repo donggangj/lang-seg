@@ -11,9 +11,8 @@ from utils.info import get_time_stamp, get_physical_device_name, show_result
 from utils.performance import iterate_time, calc_loss
 
 
-def test_onnx(onnx_path: str, image_path: str, label: str,
-              alpha=0.5, save_path='./tmp_onnx.jpg',
-              device='cpu', ref: ndarray = None):
+def test_onnx(onnx_path: str, image_path: str, label: str, ref_path='',
+              alpha=0.5, device='cpu', save_path='./tmp_onnx.jpg'):
     if device not in ['cpu', 'cuda']:
         device = 'cpu'
     import onnxruntime
@@ -30,8 +29,8 @@ def test_onnx(onnx_path: str, image_path: str, label: str,
     image = prepare_image(image_path)
     x = {_in.name: _t for _in, _t in zip(sess.get_inputs(), (image, tokens))}
     pred = sess.run(None, x)
-    if ref is not None:
-        mae, rmse = calc_loss(pred[0], ref)
+    if ref_path:
+        mae, rmse = calc_loss(pred[0], load_ref_data(ref_path))
         title = f'ONNX inference on {device.upper()}: MAE={mae:.3e}, RMSE={rmse:.3e}'
     else:
         title = f'ONNX inference on {device.upper()}'
@@ -39,8 +38,8 @@ def test_onnx(onnx_path: str, image_path: str, label: str,
     return pred
 
 
-def test_ov(ir_path: str, image_path: str, label: str, alpha=0.5,
-            device='cpu', ref: ndarray = None,
+def test_ov(ir_path: str, image_path: str, label: str, ref_path='',
+            alpha=0.5, device='cpu',
             out_dir='outputs', log_dir='logs', n_repeat: int = -1):
     def to_numpy(tensor: torch.Tensor):
         return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
@@ -72,8 +71,8 @@ def test_ov(ir_path: str, image_path: str, label: str, alpha=0.5,
                     f'mean inference time (ms): {sum(ts[-n_repeat:]) / n_repeat:.3e}\n'
                     f'starting time (ms): {ts[:-n_repeat]}\n'
                     f'inference time (ms):\n{ts[-n_repeat:]}\n')
-    if ref is not None:
-        mae, rmse = calc_loss(out, ref)
+    if ref_path:
+        mae, rmse = calc_loss(out, load_ref_data(ref_path))
         title = f'OpenVINO inference on {device_name}: MAE={mae:.3e}, RMSE={rmse:.3e}'
     else:
         title = f'OpenVINO inference on {device_name}'
@@ -84,27 +83,29 @@ def test_ov(ir_path: str, image_path: str, label: str, alpha=0.5,
 def main(test_mode=0):
     samples = [
         {'image_path': './samples/cat1.png',
-         'label': 'plant,grass,cat,stone,other'},
+         'label': 'plant,grass,cat,stone,other',
+         'ref_path': './samples/cat1.npz'},
         {'image_path': './samples/cat1.png',
-         'label': 'plant,cat,stone,other'},
+         'label': 'plant,cat,stone,other',
+         'ref_path': ''},
         {'image_path': './samples/ADE_val_00000001.png',
-         'label': 'house,grass,sky,other'},
+         'label': 'house,grass,sky,other',
+         'ref_path': ''},
         {'image_path': './samples/ADE_val_00000001.png',
-         'label': 'house,sky,other'},
+         'label': 'house,sky,other',
+         'ref_path': ''},
         {'image_path': './samples/ADE_val_00000001.png',
-         'label': 'house,sky,grass,wall,other'}
+         'label': 'house,sky,grass,wall,other',
+         'ref_path': ''}
     ]
     out_dir = './outputs'
     alpha = 0.5
     onnx_path = './LANG-SEG-opset16.onnx'
     ir_path = './ov_py39/LANG-SEG_opset16.xml'
-    ref_data_path = './original_output.npz'
     if test_mode != -1:
         samples = samples[:1]
-        ref = load_ref_data(ref_data_path)
         n_repeat = 10
     else:
-        ref = None
         n_repeat = -1
 
     if test_mode == 0 or test_mode == -1:
@@ -113,7 +114,7 @@ def main(test_mode=0):
         for sample in samples:
             fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
             test_onnx(onnx_path, **sample, alpha=alpha,
-                      save_path=fig_path, ref=ref, device=device)
+                      save_path=fig_path, device=device)
         print(f'Finished testing')
     if test_mode == 1 or test_mode == -1:
         device = 'cuda'
@@ -121,25 +122,25 @@ def main(test_mode=0):
         for sample in samples:
             fig_path = join(out_dir, f'./onnx_inference_{device}_{get_time_stamp()}.jpg')
             test_onnx(onnx_path, **sample, alpha=alpha,
-                      save_path=fig_path, ref=ref, device=device)
+                      save_path=fig_path, device=device)
         print(f'Finished testing')
     if test_mode == 2 or test_mode == -1:
         device = 'CPU'
         print(f'Testing OpenVINO on {device}......')
         for sample in samples:
-            test_ov(ir_path, **sample, alpha=alpha, device=device, ref=ref, n_repeat=n_repeat)
+            test_ov(ir_path, **sample, alpha=alpha, device=device, n_repeat=n_repeat)
         print(f'Finished testing')
     if test_mode == 3 or test_mode == -1:
         device = 'GPU.0'
         print(f'Testing OpenVINO on {device}......')
         for sample in samples:
-            test_ov(ir_path, **sample, alpha=alpha, device=device, ref=ref, n_repeat=n_repeat)
+            test_ov(ir_path, **sample, alpha=alpha, device=device, n_repeat=n_repeat)
         print(f'Finished testing')
     if test_mode == 4 or test_mode == -1:
         device = 'GPU.1'
         print(f'Testing OpenVINO on {device}......')
         for sample in samples:
-            test_ov(ir_path, **sample, alpha=alpha, device=device, ref=ref, n_repeat=n_repeat)
+            test_ov(ir_path, **sample, alpha=alpha, device=device, n_repeat=n_repeat)
         print(f'Finished testing')
 
 
