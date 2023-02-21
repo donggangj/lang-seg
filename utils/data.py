@@ -16,6 +16,11 @@ def prepare_image(image_path='samples/cat1.png'):
     return image
 
 
+def prepare_label(label_str: str):
+    labels = [label.strip() for label in label_str.split(',')]
+    return labels
+
+
 def load_ref_data(data_path='original_result.npz'):
     try:
         f = np.load(data_path)

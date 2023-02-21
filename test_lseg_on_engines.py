@@ -6,7 +6,7 @@ import torch
 from numpy import ndarray
 from openvino.runtime import Core
 
-from utils.data import prepare_image, load_ref_data
+from utils.data import prepare_image, prepare_label, load_ref_data
 from utils.info import get_time_stamp, get_physical_device_name, show_result
 from utils.performance import iterate_time, calc_loss
 
@@ -18,7 +18,7 @@ def test_onnx(onnx_path: str, image_path: str, label: str,
         device = 'cpu'
     import onnxruntime
 
-    labels = label.split(',')
+    labels = prepare_label(label)
     tokens = clip.tokenize(labels)
     if device == 'cpu':
         providers = ['CPUExecutionProvider']
@@ -54,7 +54,7 @@ def test_ov(ir_path: str, image_path: str, label: str, alpha=0.5,
     ir_model = core.read_model(ir_path)
     model = core.compile_model(ir_model, device)
     image = prepare_image(image_path)
-    labels = label.split(',')
+    labels = prepare_label(label)
     tokens = clip.tokenize(labels)
     x_in = ((to_numpy(image), to_numpy(tokens)),)
     if n_repeat <= 0:
