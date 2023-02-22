@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn.functional as nn_func
 from torch import nn, Tensor
+
 try:
     import habana_frameworks.torch
 except ImportError:
@@ -21,16 +22,17 @@ class LSeg_habana_MultiEvalModule(nn.Module):
         self.crop_size = module.crop_size
         self.scales = scales
         self.flip = flip
+        self.is_dynamic_hpu = False
         print('MultiEvalModule: base_size {}, crop_size {}'.format(self.base_size, self.crop_size))
 
     def forward(self, image: Tensor, label_set=''):
-        if image.device.type == 'hpu':
-            scores = self.forward_on_hpu(image, label_set)
+        if self.is_dynamic_hpu:
+            scores = self.forward_on_dynamic_hpu(image, label_set)
         else:
             scores = self.forward_on_common_device(image, label_set)
         return scores
 
-    def forward_on_hpu(self, image: Tensor, label_set=''):
+    def forward_on_dynamic_hpu(self, image: Tensor, label_set=''):
         print('** MultiEvalModule forward phase: {} **'.format(label_set))
         batch, _, h, w = image.size()
         n_class = len(label_set) or len(self.module.net.labels)
@@ -154,6 +156,9 @@ class LSeg_habana_MultiEvalModule(nn.Module):
             score = resize_image(outputs, h, w, **self.module._up_kwargs)
             scores += score
         return scores
+
+    def on_dynamic_hpu(self):
+        self.is_dynamic_hpu = True
 
 
 def module_inference_habana(module, image, label_set, flip=True):
