@@ -13,7 +13,7 @@ except ImportError:
 class LSeg_habana_MultiEvalModule(nn.Module):
     """Multi-size Segmentation Eavluator"""
 
-    def __init__(self, module, device_ids=None, flip=True,
+    def __init__(self, module, flip=True,
                  scales=(0.5, 0.75, 1.0, 1.25, 1.5, 1.75)):
         super(LSeg_habana_MultiEvalModule, self).__init__()
         self.module = module
