@@ -246,7 +246,7 @@ def load_model(opt):
     model.std = [0.5, 0.5, 0.5]
     # INTEL_CUSTOMIZATION
     evaluator = LSeg_habana_MultiEvalModule(
-        model, scales=scales, flip=True
+        model, scales=scales
     )
     # END of INTEL_CUSTOMIZATION
     evaluator.eval()

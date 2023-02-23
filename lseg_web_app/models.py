@@ -14,14 +14,12 @@ except ImportError:
 class LSeg_habana_MultiEvalModule(nn.Module):
     """Multi-size Segmentation Eavluator"""
 
-    def __init__(self, module, flip=True,
-                 scales=(0.5, 0.75, 1.0, 1.25, 1.5, 1.75)):
+    def __init__(self, module, scales=(0.5, 0.75, 1.0, 1.25, 1.5, 1.75)):
         super(LSeg_habana_MultiEvalModule, self).__init__()
         self.module = module
         self.base_size = module.base_size
         self.crop_size = module.crop_size
         self.scales = scales
-        self.flip = flip
         self.is_dynamic_hpu = False
         print('MultiEvalModule: base_size {}, crop_size {}'.format(self.base_size, self.crop_size))
 
@@ -55,7 +53,7 @@ class LSeg_habana_MultiEvalModule(nn.Module):
             if long_size <= crop_size:
                 pad_img = pad_image(cur_img, self.module.mean,
                                     self.module.std, crop_size)
-                outputs = module_inference_habana(self.module, pad_img, label_set, self.flip)
+                outputs = module_inference_habana(self.module, pad_img, label_set)
                 outputs = crop_image(outputs, 0, height, 0, width)
             else:
                 if short_size < crop_size:
@@ -82,7 +80,7 @@ class LSeg_habana_MultiEvalModule(nn.Module):
                         # pad if needed
                         pad_crop_img = pad_image(crop_img, self.module.mean,
                                                  self.module.std, crop_size)
-                        output = module_inference_habana(self.module, pad_crop_img, label_set, self.flip)
+                        output = module_inference_habana(self.module, pad_crop_img, label_set)
                         outputs[:, :, h0:h1, w0:w1] += crop_image(output,
                                                                   0, h1 - h0, 0, w1 - w0)
                         count_norm[:, :, h0:h1, w0:w1] += 1
@@ -119,7 +117,7 @@ class LSeg_habana_MultiEvalModule(nn.Module):
             if long_size <= crop_size:
                 pad_img = pad_image(cur_img, self.module.mean,
                                     self.module.std, crop_size)
-                outputs = module_inference_habana(self.module, pad_img, label_set, self.flip)
+                outputs = module_inference_habana(self.module, pad_img, label_set)
                 outputs = crop_image(outputs, 0, height, 0, width)
             else:
                 if short_size < crop_size:
@@ -146,7 +144,7 @@ class LSeg_habana_MultiEvalModule(nn.Module):
                         # pad if needed
                         pad_crop_img = pad_image(crop_img, self.module.mean,
                                                  self.module.std, crop_size)
-                        output = module_inference_habana(self.module, pad_crop_img, label_set, self.flip)
+                        output = module_inference_habana(self.module, pad_crop_img, label_set)
                         outputs[:, :, h0:h1, w0:w1] += crop_image(output,
                                                                   0, h1 - h0, 0, w1 - w0)
                         count_norm[:, :, h0:h1, w0:w1] += 1
@@ -161,12 +159,11 @@ class LSeg_habana_MultiEvalModule(nn.Module):
         self.is_dynamic_hpu = True
 
 
-def module_inference_habana(module, image, label_set, flip=True):
+def module_inference_habana(module, image, label_set):
     output = module.net(image, label_set)
-    if flip:
-        fimg = flip_image(image)
-        foutput = module.net(fimg, label_set)
-        output += flip_image(foutput)
+    fimg = flip_image(image)
+    foutput = module.net(fimg, label_set)
+    output += flip_image(foutput)
     return output
 
 
