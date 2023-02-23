@@ -155,13 +155,7 @@ class LSeg(BaseModel):
         self.text = clip.tokenize(self.labels)
 
     def forward(self, x, labelset=''):
-        if labelset == '':
-            text = self.text
-        else:
-            text = clip.tokenize(labelset)
-        text = text.to(x.device)
-
-        if self.channels_last == True:
+        if self.channels_last:
             x.contiguous(memory_format=torch.channels_last)
 
         layer_1, layer_2, layer_3, layer_4 = forward_vit(self.pretrained, x)
@@ -176,9 +170,7 @@ class LSeg(BaseModel):
         path_2 = self.scratch.refinenet2(path_3, layer_2_rn)
         path_1 = self.scratch.refinenet1(path_2, layer_1_rn)
 
-        text = text.to(x.device)
         self.logit_scale = self.logit_scale.to(x.device)
-        text_features = self.clip_pretrained.encode_text(text)
 
         image_features = self.scratch.head1(path_1)
 
@@ -187,11 +179,17 @@ class LSeg(BaseModel):
 
         # normalized features
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+
+        if labelset == '':
+            text = self.text
+        else:
+            text = clip.tokenize(labelset)
+        text = text.to(x.device)
+        text_features = self.clip_pretrained.encode_text(text)
+        # normalized features
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
-        # INTEL_CUSTOMIZATION
         logits_per_image = self.logit_scale * image_features @ text_features.t()
-        # END of INTEL_CUSTOMIZATION
 
         out = logits_per_image.float().view(imshape[0], imshape[2], imshape[3], -1).permute(0, 3, 1, 2)
 
