@@ -37,9 +37,11 @@ def reset_interaction_state():
 def hide_result():
     st.session_state['show_result'] = False
 
+
 def display_sample_image():
     st.session_state['show_result'] = False
     st.session_state['display_from_sample'] = True
+
 
 def display_uploaded_image():
     st.session_state['show_result'] = False
@@ -276,8 +278,8 @@ def run_frontend(opt):
         sample_image = sample_paths[int(option)]
 
         uploaded_image = col2.file_uploader(f'{get_emoji("smirk", config)}Choose an image...',
-                                        on_change=display_uploaded_image,
-                                        disabled=st.session_state['disable_interaction'])
+                                            on_change=display_uploaded_image,
+                                            disabled=st.session_state['disable_interaction'])
 
         if st.session_state['display_from_sample'] and not st.session_state['show_result']:
             col1.write(f'{get_emoji("sunglasses", config)}Last selected sample image:')
