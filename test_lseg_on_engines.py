@@ -3,7 +3,6 @@ from os.path import join
 import clip
 import numpy as np
 import torch
-from numpy import ndarray
 from openvino.runtime import Core
 
 from utils.data import prepare_image, prepare_label, load_ref_data
