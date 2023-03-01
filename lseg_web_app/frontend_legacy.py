@@ -9,8 +9,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-from lseg_web_app.utils import (Options, load_config, check_dir, get_utc_time_stamp, calc_error,
-                                get_result_figure, get_preview_figure, get_new_palette)
+from lseg_web_app.utils import (calc_error, check_dir, get_new_palette, get_preview_figure,
+                                get_result_figure, get_utc_time_stamp, load_config, Options)
 
 
 def init_session_state():
