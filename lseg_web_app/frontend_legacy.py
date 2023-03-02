@@ -1,4 +1,4 @@
-from os import listdir, remove, makedirs, removedirs
+from os import listdir, remove, makedirs
 from os.path import join, exists, basename, dirname, isdir
 from shutil import move
 from time import sleep, time
@@ -9,8 +9,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-from lseg_web_app.utils import (calc_error, check_dir, get_new_palette, get_preview_figure,
-                                get_result_figure, get_utc_time_stamp, load_config, Options)
+from lseg_web_app.utils import (Options, calc_error, check_dir, get_new_palette, get_preview_figure,
+                                get_result_figure, get_utc_time_stamp, load_config, remove_dir_and_files)
 
 
 def init_session_state():
@@ -204,11 +204,6 @@ def zip_and_save(zip_path: str, *content_paths):
 
 
 def prepare_download_file(image: Image.Image, labels: List[str], output: np.ndarray, config: dict):
-    def remove_dir_and_files(dir_path: str):
-        for file_name in listdir(dir_path):
-            remove(join(dir_path, file_name))
-        removedirs(dir_path)
-
     if exists(st.session_state['last_download_path']):
         last_parsed_result_dir = dirname(st.session_state['last_download_path'])
         remove_dir_and_files(last_parsed_result_dir)

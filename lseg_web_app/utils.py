@@ -2,7 +2,8 @@ import argparse
 import hashlib
 import json
 import time
-from os import makedirs
+from os import makedirs, listdir, remove, removedirs
+from os.path import join
 from typing import Dict, List
 
 import matplotlib.patches as mpatches
@@ -78,6 +79,12 @@ class MD5Table:
 def check_dir(config: dict):
     makedirs(config['input_dir'], exist_ok=True)
     makedirs(config['output_dir'], exist_ok=True)
+
+
+def remove_dir_and_files(dir_path: str):
+    for file_name in listdir(dir_path):
+        remove(join(dir_path, file_name))
+    removedirs(dir_path)
 
 
 def default_config():
