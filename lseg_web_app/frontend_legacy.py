@@ -3,14 +3,15 @@ from os.path import join, exists, basename, dirname, isdir
 from shutil import move
 from time import sleep, time
 from typing import List, Union
-from zipfile import ZipFile
 
 import numpy as np
 import streamlit as st
 from PIL import Image
 
-from lseg_web_app.utils import (Options, calc_error, check_dir, get_new_palette, get_preview_figure,
-                                get_result_figure, get_utc_time_stamp, load_config, remove_dir_and_files)
+from lseg_web_app.utils import (Options, calc_error, check_dir, get_preview_figure, get_result_figure,
+                                get_utc_time_stamp, load_config, remove_dir_and_files,
+                                get_mask_images_and_object_images, save_mask_images_and_object_images,
+                                zip_and_save)
 
 
 def init_session_state():
@@ -154,53 +155,6 @@ def parse_result(res_path: str, config: dict):
         np.uint8((image_array.squeeze().transpose(1, 2, 0) * 0.5 + 0.5) * 255)
     ).convert('RGBA')
     return image, labels, output, device_name
-
-
-def get_mask_images_and_object_images(image: Image.Image, output: np.ndarray, n_label_in: int):
-    n_label_out = output.shape[1]
-    predict = np.argmax(output, 1)
-    object_mask_array = np.uint8(predict.squeeze())
-    mask_image = Image.fromarray(object_mask_array.squeeze().astype('uint8'))
-    mask_image.putpalette(get_new_palette(n_label_out))
-    mask_image = mask_image.convert('RGBA')
-    mask_images = [mask_image]
-    if n_label_out > n_label_in:
-        ex_mask_array = (predict >= n_label_in).squeeze()
-        ex_mask_array = ex_mask_array.reshape((*ex_mask_array.shape, 1))
-        mask_images.append(Image.fromarray(mask_image * np.bitwise_not(ex_mask_array) + image * ex_mask_array))
-    object_mask_array = object_mask_array.reshape((*object_mask_array.shape, 1))
-    object_images = []
-    image = image.convert('RGBA')
-    for label_id in range(object_mask_array.max() + 1):
-        object_images.append(Image.fromarray(image * (object_mask_array == label_id)))
-    return mask_images, object_images
-
-
-def save_mask_images_and_object_images(mask_images: List[Image.Image],
-                                       object_images: List[Image.Image],
-                                       labels: List[str],
-                                       save_dir: str):
-    image_paths: List[str] = []
-    if not isdir(save_dir) or len(mask_images + object_images) == 0:
-        return image_paths
-    for mask_id, mask_image in enumerate(mask_images):
-        image_paths.append(join(save_dir, f'mask_ver{mask_id}.png'))
-        mask_image.save(image_paths[-1])
-    for label_id, (label, object_image) in enumerate(zip(labels, object_images)):
-        image_paths.append(join(save_dir, f'{label_id}_{label}.png'))
-        object_image.save(image_paths[-1])
-    return image_paths
-
-
-def zip_and_save(zip_path: str, *content_paths):
-    try:
-        with ZipFile(zip_path, 'w') as zip_file:
-            for content_path in content_paths:
-                zip_file.write(content_path, basename(content_path))
-        return True
-    except Exception as err:
-        print(err)
-        return False
 
 
 def prepare_download_file(image: Image.Image, labels: List[str], output: np.ndarray, config: dict):

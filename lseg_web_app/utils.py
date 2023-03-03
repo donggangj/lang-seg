@@ -3,8 +3,9 @@ import hashlib
 import json
 import time
 from os import makedirs, listdir, remove, removedirs
-from os.path import join
+from os.path import join, isdir, basename
 from typing import Dict, List
+from zipfile import ZipFile
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -243,3 +244,50 @@ def get_preview_figure(image_paths: List[str]):
             ax.yaxis.set_ticks([])
             ax.set_xlabel(f'{image_idx}')
     return fig
+
+
+def get_mask_images_and_object_images(image: Image.Image, output: np.ndarray, n_label_in: int):
+    n_label_out = output.shape[1]
+    predict = np.argmax(output, 1)
+    object_mask_array = np.uint8(predict.squeeze())
+    mask_image = Image.fromarray(object_mask_array.squeeze().astype('uint8'))
+    mask_image.putpalette(get_new_palette(n_label_out))
+    mask_image = mask_image.convert('RGBA')
+    mask_images = [mask_image]
+    if n_label_out > n_label_in:
+        ex_mask_array = (predict >= n_label_in).squeeze()
+        ex_mask_array = ex_mask_array.reshape((*ex_mask_array.shape, 1))
+        mask_images.append(Image.fromarray(mask_image * np.bitwise_not(ex_mask_array) + image * ex_mask_array))
+    object_mask_array = object_mask_array.reshape((*object_mask_array.shape, 1))
+    object_images = []
+    image = image.convert('RGBA')
+    for label_id in range(object_mask_array.max() + 1):
+        object_images.append(Image.fromarray(image * (object_mask_array == label_id)))
+    return mask_images, object_images
+
+
+def save_mask_images_and_object_images(mask_images: List[Image.Image],
+                                       object_images: List[Image.Image],
+                                       labels: List[str],
+                                       save_dir: str):
+    image_paths: List[str] = []
+    if not isdir(save_dir) or len(mask_images + object_images) == 0:
+        return image_paths
+    for mask_id, mask_image in enumerate(mask_images):
+        image_paths.append(join(save_dir, f'mask_ver{mask_id}.png'))
+        mask_image.save(image_paths[-1])
+    for label_id, (label, object_image) in enumerate(zip(labels, object_images)):
+        image_paths.append(join(save_dir, f'{label_id}_{label}.png'))
+        object_image.save(image_paths[-1])
+    return image_paths
+
+
+def zip_and_save(zip_path: str, *content_paths):
+    try:
+        with ZipFile(zip_path, 'w') as zip_file:
+            for content_path in content_paths:
+                zip_file.write(content_path, basename(content_path))
+        return True
+    except Exception as err:
+        print(err)
+        return False
