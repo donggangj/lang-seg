@@ -116,6 +116,7 @@ def default_config():
                 "short_sizes": [360, 720, 1080, 1440, 2560]
             },
             'device': 'hpu',
+            'supported_devices': ['cpu', 'hpu'],
             'hpu_mode': 1,
             'render_emoji': False,
             "default_lazy_mode_label_number": 20}

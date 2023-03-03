@@ -50,6 +50,10 @@
         ]
     },
     "device": "hpu",
+    "supported_devices": [
+        "cpu",
+        "hpu"
+    ],
     "hpu_mode": 1,
     "render_emoji": false,
     "default_lazy_mode_label_number": 20
