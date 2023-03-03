@@ -291,3 +291,13 @@ def zip_and_save(zip_path: str, *content_paths):
     except Exception as err:
         print(err)
         return False
+
+
+def singleton(cls: type):
+    _instances = {}
+
+    def get_instance(*args, **kwargs):
+        if cls not in _instances:
+            _instances[cls] = cls(*args, **kwargs)
+        return _instances[cls]
+    return get_instance
