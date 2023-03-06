@@ -43,14 +43,21 @@ def test_ov(ir_path: str, image_path: str, label: str, ref_path='',
     def to_numpy(tensor: torch.Tensor):
         return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
-    if device.lower().startswith('gpu'):
-        device = device.upper()
-    else:
-        device = 'CPU'
-    device_name = get_physical_device_name(device.lower())
     core = Core()
     ir_model = core.read_model(ir_path)
-    model = core.compile_model(ir_model, device)
+    if device.lower().startswith('gpu'):
+        device = device.upper()
+        device_name = get_physical_device_name(device)
+        core.set_property("HETERO", {"MULTI_DEVICE_PRIORITIES": f"{device},CPU"})
+        core.set_property(device, {"INFERENCE_PRECISION_HINT": "f32"})
+        config = {"PERFORMANCE_HINT": "LATENCY"}
+        device = 'HETERO'
+    else:
+        device = 'CPU'
+        device_name = get_physical_device_name(device.lower())
+        config = {"PERFORMANCE_HINT": "LATENCY",
+                  "INFERENCE_PRECISION_HINT": "bf16"}
+    model = core.compile_model(ir_model, device, config)
     image = prepare_image(image_path)
     labels = prepare_label(label)
     tokens = clip.tokenize(labels)
