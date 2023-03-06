@@ -26,9 +26,9 @@ def get_physical_device_name(device: str):
         device_name = torch.hpu.get_device_name()
     elif device.lower().startswith('gpu'):
         core = Core()
-        available_gpus = [_device for _device in core.available_devices if 'gpu' in _device]
+        available_gpus = [_device for _device in core.available_devices if 'gpu' in _device.lower()]
         if device in available_gpus:
-            device_name = core.get_property(device_name, "FULL_DEVICE_NAME")
+            device_name = core.get_property(device, "FULL_DEVICE_NAME")
     return device_name
 
 
