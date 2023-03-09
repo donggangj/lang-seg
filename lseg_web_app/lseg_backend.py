@@ -15,7 +15,7 @@ from torchvision import transforms
 from lseg_web_app.models import LSeg_habana_MultiEvalModule
 from lseg_web_app.utils import Options, MD5Table, default_config
 from lseg_web_app.utils import load_config, check_dir
-from modules.lseg_inference import LSegInference
+from lseg.lseg_inference import LSegInference
 
 
 class BackendOptions(Options):
