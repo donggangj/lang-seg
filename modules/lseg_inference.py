@@ -7,7 +7,7 @@ import torch
 import torch.cuda.amp as amp
 import torchvision.transforms as transforms
 
-from models.lseg_net import LSegNet
+from .models.lseg_net import LSegNet
 
 
 class LSegModuleInference(pl.LightningModule):
