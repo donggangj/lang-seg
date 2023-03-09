@@ -1,4 +1,4 @@
-from lseg_web_app.lseg_backend import main as run_lseg_backend
+from web_app.lseg_backend import main as run_lseg_backend
 
 
 def main():

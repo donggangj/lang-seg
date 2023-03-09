@@ -8,10 +8,10 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-from lseg_web_app.utils import (Options, calc_error, check_dir, get_preview_figure, get_result_figure,
-                                get_utc_time_stamp, load_config, remove_dir_and_files,
-                                get_mask_images_and_object_images, save_mask_images_and_object_images,
-                                zip_and_save)
+from web_app.utils import (Options, calc_error, check_dir, get_preview_figure, get_result_figure,
+                           get_utc_time_stamp, load_config, remove_dir_and_files,
+                           get_mask_images_and_object_images, save_mask_images_and_object_images,
+                           zip_and_save)
 
 
 def init_session_state():

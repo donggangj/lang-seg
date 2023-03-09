@@ -1,4 +1,4 @@
-from lseg_web_app.frontend_legacy import main as run_lseg_frontend
+from web_app.frontend_legacy import main as run_lseg_frontend
 
 
 def main():

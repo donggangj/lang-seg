@@ -10,10 +10,10 @@ from PIL import Image
 from streamlit.delta_generator import DeltaGenerator
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from lseg_web_app.utils import (Options, get_mask_images_and_object_images,
-                                get_preview_figure, get_result_figure, get_utc_time_stamp,
-                                load_config, remove_dir_and_files,
-                                save_mask_images_and_object_images, singleton, zip_and_save)
+from web_app.utils import (Options, get_mask_images_and_object_images,
+                           get_preview_figure, get_result_figure, get_utc_time_stamp,
+                           load_config, remove_dir_and_files,
+                           save_mask_images_and_object_images, singleton, zip_and_save)
 
 
 @singleton
