@@ -148,7 +148,7 @@ class LSegModuleInference(pl.LightningModule):
 
 def get_labels(dataset):
     labels = []
-    path = 'label_files/{}_objectInfo150.txt'.format(dataset)
+    path = 'lseg/label_files/{}_objectInfo150.txt'.format(dataset)
     assert os.path.exists(path), '*** Error : {} not exist !!!'.format(path)
     f = open(path, 'r')
     lines = f.readlines()
